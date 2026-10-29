@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>流量承接诊断 · Keyword Exposure</title>
+<style>
+  :root{--bg:#0f1216;--card:#171b21;--card2:#1e242c;--line:#2b333d;--txt:#e8edf3;
+        --dim:#8b97a6;--green:#31c48d;--red:#f05252;--amber:#f0a93b;--blue:#4c9aff;--purple:#b47cff}
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px 16px 70px;background:var(--bg);color:var(--txt);
+    font:14px/1.55 -apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif}
+  .wrap{max-width:1240px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px;font-weight:650;display:inline-block}
+  .ver{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;
+    background:#16351f;color:var(--green);font-size:11px;vertical-align:middle}
+  .sub{color:var(--dim);font-size:12px;margin:4px 0 16px;line-height:1.7}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .card h2{font-size:13px;margin:0 0 12px;color:var(--dim);font-weight:600;letter-spacing:.4px}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .bar>*{flex:0 0 auto}
+  .btn{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:7px;
+    padding:7px 12px;font-size:13px;cursor:pointer}
+  .btn:hover{border-color:var(--blue)}
+  .btn.primary{background:#1b3557;border-color:#2c5285}
+  .filebtn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px}
+  .filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+  .filebtn.has{border-color:#2c5285;background:#1b3557}
+  input[type=number],input[type=text],select{background:var(--card2);border:1px solid var(--line);
+    border-radius:7px;color:var(--txt);padding:7px 8px;font-size:13px;font-variant-numeric:tabular-nums}
+  input:focus,select:focus{outline:none;border-color:var(--blue)}
+  .hint{color:var(--dim);font-size:11.5px;margin-top:10px;line-height:1.7}
+  .sum{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  @media(max-width:900px){.sum{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:560px){.sum{grid-template-columns:repeat(2,1fr)}}
+  .kv{background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:10px 11px}
+  .kv .k{font-size:11px;color:var(--dim);margin-bottom:3px}
+  .kv .v{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+  .kv .n{font-size:10.5px;color:var(--dim);margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th{font-size:11px;color:var(--dim);font-weight:600;text-align:right;padding:0 6px 7px;
+    border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+  th.l{text-align:left}
+  th:hover{color:var(--txt)}
+  td{padding:6px;border-bottom:1px solid #20262e;text-align:right;font-size:13px}
+  td.l{text-align:left}
+  tr:hover td{background:#1a2028}
+  .tag{display:inline-block;font-size:11px;padding:1px 6px;border-radius:5px;white-space:nowrap}
+  .t-low{background:#3a1f1f;color:#ff9b9b;border:1px solid #552b2b}
+  .t-grip{background:#3a2c14;color:#f3c07a;border:1px solid #55401f}
+  .t-conv{background:#2a2340;color:#c9b3ff;border:1px solid #3f3560}
+  .t-scale{background:#16351f;color:#6fdc9f;border:1px solid #1d4a2c}
+  .t-hold{background:#202a36;color:#9fb0c3;border:1px solid #2f3c4b}
+  .t-none{background:#242a31;color:#7d8894;border:1px solid #333b45}
+  .good{color:var(--green)} .bad{color:var(--red)} .warn{color:var(--amber)} .dim{color:var(--dim)}
+  .sortmark{color:var(--blue);font-size:9px;margin-left:2px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--dim)}
+  .legend b{color:var(--txt);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>流量承接诊断<span class="ver">v1.0</span></h1>
+  <div class="sub">
+    上传「搜索词报告」和「搜索量词库」，算出每个词的 <b>曝光覆盖率 k</b>（搜索里有多少次能看到你）和 <b>CTR</b>（看到的人点不点），
+    再给出结论：是<strong>没被看到</strong>（k 低，去抢位置），还是<strong>看到了不点</strong>（CTR 低，改主图/价格）。全程本地计算，不上传。
+  </div>
+
+  <div class="card">
+    <h2>① 数据源</h2>
+    <div class="bar">
+      <span class="filebtn" id="reportBtn">选择搜索词报告
+        <input type="file" id="reportFile" accept=".xlsx,.csv,.tsv,.txt">
+      </span>
+      <span class="filebtn" id="libBtn">选择搜索量词库（可多选）
+        <input type="file" id="libFiles" accept=".xlsx,.csv,.tsv,.txt" multiple>
+      </span>
+      <label style="font-size:12px;color:var(--dim)">报告覆盖</label>
+      <input type="number" id="days" value="30" min="1" max="400" style="width:74px">
+      <span style="font-size:12px;color:var(--dim)">天</span>
+      <button class="btn primary" id="run">开始分析</button>
+      <button class="btn" id="demo">看示例</button>
+    </div>
+    <div class="hint" id="status">搜索词报告必填（xlsx/csv，需含「搜索词 / 曝光量 / 点击」）；词库用来算 k，可多选、可后补。词库缺的词只显示 CTR，k 留空。</div>
+  </div>
+
+  <div class="card" id="overviewCard" style="display:none">
+    <h2>② 账户概览</h2>
+    <div class="sum" id="overview"></div>
+    <div class="hint" id="verdictLine"></div>
+  </div>
+
+  <div class="card" id="tableCard" style="display:none">
+    <h2>③ 逐词诊断</h2>
+    <div class="bar">
+      <input type="text" id="q" placeholder="筛选关键词…" style="width:220px">
+      <select id="fVerdict">
+        <option value="">全部结论</option>
+        <option value="low">曝光不足 → 抢位置</option>
+        <option value="opp">曝光少但效率好 → 优先加价</option>
+        <option value="grip">曝光够、点不动 → 改主图/价格</option>
+        <option value="conv">点得进、不买 → 查详情/变体</option>
+        <option value="scale">都好 → 加预算</option>
+        <option value="hold">维持观察</option>
+        <option value="none">待补搜索量 / 样本不足</option>
+      </select>
+      <span class="dimm wc" id="counts"></span>
+    </div>
+    <div style="overflow-x:auto;margin-top:8px">
+      <table id="tbl">
+        <thead><tr>
+          <th class="l" data-sort="kw">搜索词</th>
+          <th data-sort="imp">曝光</th>
+          <th data-sort="clicks">点击</th>
+          <th data-sort="ctr">CTR</th>
+          <th data-sort="sv">月搜索量</th>
+          <th data-sort="k">k 覆盖率</th>
+          <th data-sort="cvr">CVR</th>
+          <th data-sort="cpa">CPA</th>
+          <th data-sort="spend">花费</th>
+          <th class="l" data-sort="verdict">结论</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><b>k</b> = 曝光 ÷ 该期搜索量，0.1 表示 10 次搜索里只有 1 次看到你</span>
+      <span><b>样本</b>：点击 &lt; 20 只标结论但不建议据此决策</span>
+      <span><b>低/高</b>：CTR 与账户平均相比（低于 0.6 倍 / 高于 1.5 倍）</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 通用工具 ============ */
+const $ = id => document.getElementById(id);
+const num = v => isFinite(v) ? Math.round(v).toLocaleString('en-US') : '—';
+const money = v => isFinite(v) ? '$' + v.toFixed(2) : '—';
+const pct = (v, d) => isFinite(v) ? (v * 100).toFixed(d === undefined ? 2 : d) + '%' : '—';
+
+/* ============ xlsx / csv 解析（零依赖） ============ */
+function xlU16(u8, o) { return u8[o] | (u8[o + 1] << 8); }
+function xlU32(u8, o) { return (u8[o] | (u8[o + 1] << 8) | (u8[o + 2] << 16) | (u8[o + 3] << 24)) >>> 0; }
+function xlFindEocd(u8) {
+  const min = Math.max(0, u8.length - 22 - 65535);
+  for (let i = u8.length - 22; i >= min; i--) {
+    if (u8[i] === 0x50 && u8[i + 1] === 0x4b && u8[i + 2] === 0x05 && u8[i + 3] === 0x06) return i;
+  }
+  return -1;
+}
+async function xlInflateRaw(bytes) {
+  const ds = new DecompressionStream('deflate-raw');
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function xlUnzip(u8) {
+  const eocd = xlFindEocd(u8);
+  if (eocd < 0) throw new Error('不是有效的 xlsx');
+  const td = new TextDecoder('utf-8');
+  const count = xlU16(u8, eocd + 10);
+  let off = xlU32(u8, eocd + 16);
+  const meta = new Map();
+  for (let i = 0; i < count; i++) {
+    if (xlU32(u8, off) !== 0x02014b50) break;
+    const method = xlU16(u8, off + 10), compSize = xlU32(u8, off + 20);
+    const nameLen = xlU16(u8, off + 28), extraLen = xlU16(u8, off + 30), commentLen = xlU16(u8, off + 32);
+    const localOff = xlU32(u8, off + 42);
+    meta.set(td.decode(u8.subarray(off + 46, off + 46 + nameLen)), { method, compSize, localOff });
+    off += 46 + nameLen + extraLen + commentLen;
+  }
+  const out = new Map();
+  for (const [name, m] of meta) {
+    const lh = m.localOff;
+    if (xlU32(u8, lh) !== 0x04034b50) continue;
+    const nl = xlU16(u8, lh + 26), el = xlU16(u8, lh + 28);
+    const start = lh + 30 + nl + el;
+    const raw = u8.subarray(start, start + m.compSize);
+    out.set(name, m.method === 0 ? raw : await xlInflateRaw(raw));
+  }
+  return out;
+}
+function xlDecode(s) {
+  return String(s).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, (m, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (m, d) => String.fromCodePoint(parseInt(d, 10)))
+    .replace(/&amp;/g, '&');
+}
+function xlColIdx(ref) {
+  const m = /^([A-Z]+)/.exec(ref || '');
+  if (!m) return -1;
+  let n = 0; for (const c of m[1]) n = n * 26 + (c.charCodeAt(0) - 64);
+  return n - 1;
+}
+function xlParseShared(xml) {
+  const out = [], re = /<si\b[^>]*>([\s\S]*?)<\/si>/g;
+  let m;
+  while ((m = re.exec(xml))) out.push([...m[1].matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(x => xlDecode(x[1])).join(''));
+  return out;
+}
+function xlParseSheet(xml, shared) {
+  const rows = [], rowRe = /<row\b([^>]*)>([\s\S]*?)<\/row>/g;
+  let rm;
+  while ((rm = rowRe.exec(xml))) {
+    const rnum = /r="(\d+)"/.exec(rm[1]);
+    const cells = [];
+    const cellRe = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+    let cm;
+    while ((cm = cellRe.exec(rm[2]))) {
+      const a = cm[1], inner = cm[2] || '';
+      const ref = /r="([A-Z]+\d+)"/.exec(a), type = /t="([^"]+)"/.exec(a);
+      let val = null;
+      if (type && type[1] === 'inlineStr') {
+        val = [...inner.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(x => xlDecode(x[1])).join('');
+      } else {
+        const v = /<v\b[^>]*>([\s\S]*?)<\/v>/.exec(inner);
+        if (v) {
+          const raw = xlDecode(v[1]);
+          if (type && type[1] === 's') val = shared[+raw] ?? '';
+          else if (type && (type[1] === 'str' || type[1] === 'e')) val = raw;
+          else { const n = Number(raw); val = Number.isFinite(n) ? n : raw; }
+        }
+      }
+      const ci = ref ? xlColIdx(ref[1]) : cells.length;
+      if (val !== null && val !== '') cells[ci] = val;
+    }
+    rows[(rnum ? +rnum[1] : rows.length + 1) - 1] = cells;
+  }
+  return rows.map(r => r || []);
+}
+async function xlReadSheets(buf) {
+  const files = await xlUnzip(buf);
+  const td = new TextDecoder('utf-8');
+  const wbXml = files.get('xl/workbook.xml'), relXml = files.get('xl/_rels/workbook.xml.rels');
+  const shared = files.has('xl/sharedStrings.xml') ? xlParseShared(td.decode(files.get('xl/sharedStrings.xml'))) : [];
+  const relMap = {};
+  if (relXml) for (const m of td.decode(relXml).matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g)) relMap[m[1]] = m[2].replace(/^\/?xl\//, '').replace(/^\//, '');
+  const sheets = [];
+  if (wbXml) {
+    for (const m of td.decode(wbXml).matchAll(/<sheet\b[^>]*name="([^"]*)"[^>]*r:id="([^"]+)"/g)) {
+      const target = relMap[m[2]] || '';
+      const body = files.get('xl/' + target.replace(/^\.\//, '')) || files.get('xl/worksheets/' + m[2] + '.xml');
+      if (body) sheets.push({ name: xlDecode(m[1]), rows: xlParseSheet(td.decode(body), shared) });
+    }
+  }
+  if (!sheets.length) for (const [name, body] of files) if (/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) sheets.push({ name, rows: xlParseSheet(td.decode(body), shared) });
+  if (!sheets.length) throw new Error('xlsx 里没有工作表');
+  return sheets;
+}
+function xlParseCsv(text) {
+  const lines = String(text).replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.length);
+  if (!lines.length) return [];
+  const first = lines[0];
+  const delim = (first.split('\t').length > first.split(',').length) ? '\t' : ',';
+  return lines.map(line => {
+    const out = []; let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (q) { if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === delim) { out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out.map(s => s.trim());
+  });
+}
+
+/* ============ 关键词 / 字段识别 ============ */
+const KW_RE = /用户搜索词|搜索词|客户搜索词|流量词|关键词|keyword|searchterm|query/i;
+const IMP_RE = /曝光量|展示量|曝光|impression/i;
+const CLK_RE = /点击量|点击|click/i;
+const SPEND_RE = /花费|spend|cost/i;
+const ORD_RE = /广告订单|订单量|订单|order|purchase/i;
+const SALES_RE = /广告销售额|销售额|sales/i;
+const VOL_RE = /(搜索量|搜索次数|查询数量|searchvolume)/i;
+const VOL_WEAK = /(月搜索|周搜索|搜索)/;
+const BAD_RE = /排名|rank|占比|份额|指数|竞争|难度|竞价|cpc|曝光|展示|得分|频次|增长|环比|同比|变化/i;
+const BAD_KW = /翻译|标题|asin|sku|广告活动|广告组/i;
+
+function normHead(s) { return String(s == null ? '' : s).replace(/\s+/g, '').replace(/[（）()【】\[\]]/g, '').toLowerCase(); }
+function normKw(k) { return String(k == null ? '' : k).replace(/[\u200b\ufeff\ufffc]/g, '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+function toNum(v) {
+  if (typeof v === 'number') return v;
+  const n = parseFloat(String(v).replace(/[,\s$%￥]/g, ''));
+  return isFinite(n) ? n : 0;
+}
+function daysFromText(text) {
+  const s = String(text || '');
+  const m = /(20\d{2})[-/.]?(\d{1,2})[-/.]?(\d{1,2})\s*[~～\-—–至到]\s*(20\d{2})[-/.]?(\d{1,2})[-/.]?(\d{1,2})/.exec(s);
+  if (!m) return null;
+  const a = Date.UTC(+m[1], +m[2] - 1, +m[3]), b = Date.UTC(+m[4], +m[5] - 1, +m[6]);
+  const d = Math.round((b - a) / 86400000) + 1;
+  return (d > 0 && d <= 400) ? d : null;
+}
+
+// 搜索词报告：找到表头行与各列
+function detectReport(sheets) {
+  let best = null;
+  for (const sh of sheets) {
+    for (let hi = 0; hi < Math.min(8, sh.rows.length); hi++) {
+      const hdr = (sh.rows[hi] || []).map(normHead);
+      if (!hdr.length) continue;
+      const kwCol = hdr.findIndex(h => KW_RE.test(h) && !BAD_KW.test(h));
+      if (kwCol < 0) continue;
+      const impCol = hdr.findIndex(h => /曝光量|展示量|曝光|impression/.test(h));
+      const clkCol = hdr.findIndex(h => /点击量|点击|click/.test(h) && !/率|ctr/.test(h));
+      if (impCol < 0 || clkCol < 0) continue;
+      const rows = sh.rows.slice(hi + 1).filter(r => r && r[kwCol] != null && String(r[kwCol]).trim());
+      if (!rows.length) continue;
+      if (!best || rows.length > best.rows.length) {
+        best = {
+          sheet: sh.name, headerIdx: hi, kwCol, impCol, clkCol,
+          spendCol: hdr.findIndex(h => SPEND_RE.test(h) && !BAD_RE.test(h)),
+          ordCol: hdr.findIndex(h => ORD_RE.test(h) && !BAD_RE.test(h)),
+          salesCol: hdr.findIndex(h => SALES_RE.test(h) && !BAD_RE.test(h)),
+          rows
+        };
+      }
+    }
+  }
+  return best;
+}
+
+// 词库：关键词 + 搜索量
+function detectLib(sheets) {
+  let best = null;
+  for (const sh of sheets) {
+    for (let hi = 0; hi < Math.min(6, sh.rows.length); hi++) {
+      const hdr = (sh.rows[hi] || []).map(normHead);
+      if (!hdr.length) continue;
+      const kwCol = hdr.findIndex(h => KW_RE.test(h) && !BAD_KW.test(h));
+      if (kwCol < 0) continue;
+      let volCol = hdr.findIndex(h => VOL_RE.test(h) && !BAD_RE.test(h));
+      if (volCol < 0) volCol = hdr.findIndex(h => VOL_WEAK.test(h) && !BAD_RE.test(h));
+      if (volCol < 0) continue;
+      const rows = sh.rows.slice(hi + 1).filter(r => r && r[kwCol] != null && String(r[kwCol]).trim() && toNum(r[volCol]) > 0);
+      if (!rows.length) continue;
+      const h = String(sh.rows[hi][volCol] || '');
+      const days = /周/.test(h) ? 7 : (/月/.test(h) ? 30 : 30);
+      if (!best || rows.length > best.rows.length) best = { sheet: sh.name, kwCol, volCol, days, rows };
+    }
+  }
+  return best;
+}
+
+/* ============ 计算与诊断 ============ */
+function buildLibrary(libEntries) {
+  // libEntries: [{kw, monthly}]
+  const map = new Map();
+  libEntries.forEach(({ kw, monthly }) => {
+    const k = normKw(kw);
+    if (!k) return;
+    const prev = map.get(k);
+    if (!prev || monthly > prev) map.set(k, monthly);
+  });
+  return map;
+}
+
+function aggregateReport(rep) {
+  // 同一搜索词可能多行（按日明细），先聚合
+  const map = new Map();
+  rep.rows.forEach(r => {
+    const kw = normKw(r[rep.kwCol]);
+    if (!kw) return;
+    const cur = map.get(kw) || { kw: String(r[rep.kwCol]).replace(/[\u200b\ufeff\ufffc]/g, '').trim(), imp: 0, clicks: 0, spend: 0, orders: 0, sales: 0 };
+    cur.imp += toNum(r[rep.impCol]);
+    cur.clicks += toNum(r[rep.clkCol]);
+    if (rep.spendCol >= 0) cur.spend += toNum(r[rep.spendCol]);
+    if (rep.ordCol >= 0) cur.orders += toNum(r[rep.ordCol]);
+    if (rep.salesCol >= 0) cur.sales += toNum(r[rep.salesCol]);
+    map.set(kw, cur);
+  });
+  return [...map.values()];
+}
+
+function computeRows(agg, lib, days) {
+  const totImp = agg.reduce((a, x) => a + x.imp, 0);
+  const totClk = agg.reduce((a, x) => a + x.clicks, 0);
+  const totOrd = agg.reduce((a, x) => a + x.orders, 0);
+  const totSpend = agg.reduce((a, x) => a + x.spend, 0);
+  const avgCtr = totImp > 0 ? totClk / totImp : 0;
+  const avgCvr = totClk > 0 ? totOrd / totClk : 0;
+
+  const rows = agg.map(x => {
+    const sv = lib ? (lib.get(normKw(x.kw)) || 0) : 0;
+    const searched = sv * (days / 30);           // 报告期内的搜索次数
+    const k = searched > 0 ? x.imp / searched : 0;
+    const ctr = x.imp > 0 ? x.clicks / x.imp : 0;
+    const cvr = x.clicks > 0 ? x.orders / x.clicks : 0;
+    const cpa = x.orders > 0 ? x.spend / x.orders : 0;
+    return { ...x, sv, k, ctr, cvr, cpa, acos: x.sales > 0 ? x.spend / x.sales : 0 };
+  });
+  rows.forEach(r => { r.verdict = diagnose(r, avgCtr, avgCvr); });
+  return { rows, totals: { imp: totImp, clicks: totClk, orders: totOrd, spend: totSpend, avgCtr, avgCvr } };
+}
+
+function diagnose(r, avgCtr, avgCvr) {
+  const ctrLow = avgCtr > 0 && r.ctr < avgCtr * 0.6;
+  const ctrHigh = avgCtr > 0 && r.ctr > avgCtr * 1.5;
+  const cvrHigh = avgCvr > 0 && r.cvr > avgCvr * 1.2;
+  const cvrLow = avgCvr > 0 && r.cvr < avgCvr * 0.5;
+
+  if (!r.sv) return r.clicks >= 20 ? 'none' : 'none';      // 待补搜索量
+  if (r.clicks < 20) return 'none';                         // 样本不足
+  if (r.k < 0.1) return (ctrHigh || cvrHigh) ? 'opp' : 'low';
+  if (r.k >= 0.1 && ctrLow) return 'grip';
+  if (cvrLow) return 'conv';
+  if (r.k >= 0.5 && !ctrLow && !cvrLow) return 'scale';
+  return 'hold';
+}
+
+const VERDICT = {
+  low:   { cls: 't-low',   text: '曝光不足 → 抢位置' },
+  opp:   { cls: 't-scale', text: '曝光少但效率好 → 优先加价' },
+  grip:  { cls: 't-grip',  text: '曝光够、点不动 → 改主图/价格' },
+  conv:  { cls: 't-conv',  text: '点得进、不买 → 查详情/变体' },
+  scale: { cls: 't-scale', text: '都好 → 加预算' },
+  hold:  { cls: 't-hold',  text: '维持观察' },
+  none:  { cls: 't-none',  text: '样本不足 / 待补搜索量' }
+};
+
+/* ============ 状态与渲染 ============ */
+const STATE = { report: null, lib: null, days: 30, rows: [], totals: null, sort: 'imp', dir: -1, q: '', fv: '' };
+
+function renderOverview() {
+  const t = STATE.totals;
+  const cpa = t.orders > 0 ? t.spend / t.orders : 0;
+  const cvr = t.clicks > 0 ? t.orders / t.clicks : 0;
+  $('overview').innerHTML = [
+    ['曝光', num(t.imp), ''],
+    ['点击', num(t.clicks), ''],
+    ['CTR', pct(t.avgCtr), '账户平均'],
+    ['花费', money(t.spend), ''],
+    ['订单', num(t.orders), ''],
+    ['CVR / CPA', pct(cvr) + ' / ' + money(cpa), '账户平均']
+  ].map(([k, v, n]) => `<div class="kv"><div class="k">${k}</div><div class="v">${v}</div><div class="n">${n}</div></div>`).join('');
+
+  const withK = STATE.rows.filter(r => r.sv);
+  const enough = withK.filter(r => r.clicks >= 20);
+  const lowK = enough.filter(r => r.k < 0.1).length;
+  const grip = enough.filter(r => r.verdict === 'grip').length;
+  $('verdictLine').innerHTML =
+    `共 <b>${STATE.rows.length}</b> 个搜索词，能算 k 的 <b>${withK.length}</b> 个（点击≥20 的 <b>${enough.length}</b> 个可下结论）。` +
+    `其中 <b class="bad">${lowK}</b> 个卡在曝光（k&lt;0.1），<b class="warn">${grip}</b> 个曝光够了但点不动。`;
+}
+
+function renderTable() {
+  let rows = STATE.rows.slice();
+  if (STATE.q) { const q = STATE.q.toLowerCase(); rows = rows.filter(r => r.kw.toLowerCase().includes(q)); }
+  if (STATE.fv) {
+    if (STATE.fv === 'none') rows = rows.filter(r => r.verdict === 'none');
+    else rows = rows.filter(r => r.verdict === STATE.fv);
+  }
+  const key = STATE.sort;
+  rows.sort((a, b) => {
+    if (key === 'kw') return a.kw.localeCompare(b.kw) * STATE.dir;
+    if (key === 'verdict') return (VERDICT[a.verdict].text).localeCompare(VERDICT[b.verdict].text) * STATE.dir;
+    return ((a[key] || 0) - (b[key] || 0)) * STATE.dir;
+  });
+  $('counts').textContent = `${rows.length} / ${STATE.rows.length} 个词`;
+  $('tbody').innerHTML = rows.map(r => {
+    const v = VERDICT[r.verdict];
+    const kTxt = r.sv ? r.k.toFixed(3) : '—';
+    const kCls = !r.sv ? 'dim' : (r.k < 0.1 ? 'bad' : (r.k < 0.5 ? 'warn' : 'good'));
+    const ctrCls = !r.imp ? 'dim' : (r.ctr < (STATE.totals.avgCtr * 0.6) ? 'bad' : (r.ctr > STATE.totals.avgCtr * 1.5 ? 'good' : ''));
+    return `<tr>
+      <td class="l">${escapeHtml(r.kw)}</td>
+      <td>${num(r.imp)}</td>
+      <td>${num(r.clicks)}</td>
+      <td class="${ctrCls}">${pct(r.ctr)}</td>
+      <td>${r.sv ? num(r.sv) : '<span class="dim">—</span>'}</td>
+      <td class="${kCls}">${kTxt}</td>
+      <td>${r.clicks ? pct(r.cvr, 1) : '<span class="dim">—</span>'}</td>
+      <td>${r.orders ? money(r.cpa) : '<span class="dim">—</span>'}</td>
+      <td>${r.spend ? money(r.spend) : '<span class="dim">—</span>'}</td>
+      <td class="l"><span class="tag ${v.cls}">${v.text}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* ============ 文件读取 ============ */
+async function readAny(file) {
+  if (/\.(csv|tsv|txt)$/i.test(file.name)) return [{ name: file.name, rows: xlParseCsv(await file.text()) }];
+  return xlReadSheets(new Uint8Array(await file.arrayBuffer()));
+}
+
+async function loadReport(file) {
+  const sheets = await readAny(file);
+  const det = detectReport(sheets);
+  if (!det) throw new Error('没找到「搜索词 / 曝光量 / 点击」这三列');
+  const d = daysFromText(file.name) || daysFromText(det.sheet) || 30;
+  STATE.report = det;
+  STATE.reportDays = d;
+  $('days').value = d;
+  $('reportBtn').classList.add('has');
+  $('reportBtn').firstChild.textContent = '已选：' + file.name.slice(0, 18) + (file.name.length > 18 ? '…' : '');
+  return det.rows.length;
+}
+
+async function loadLibs(files) {
+  const entries = [];
+  let filesOk = 0, words = 0;
+  for (const f of files) {
+    try {
+      const sheets = await readAny(f);
+      const det = detectLib(sheets);
+      if (!det) continue;
+      filesOk++;
+      det.rows.forEach(r => {
+        const kw = normKw(r[det.kwCol]);
+        const v = toNum(r[det.volCol]);
+        if (!kw || v <= 0) return;
+        entries.push({ kw, monthly: v * (30 / det.days) });
+        words++;
+      });
+    } catch (e) { /* 跳过读不了的文件 */ }
+  }
+  STATE.lib = buildLibrary(entries);
+  STATE.libFiles = filesOk;
+  STATE.libWords = STATE.lib.size;
+  $('libBtn').classList.add('has');
+  $('libBtn').firstChild.textContent = `已选 ${filesOk} 个词库（${STATE.lib.size} 词）`;
+  return STATE.lib.size;
+}
+
+function analyze() {
+  if (!STATE.report) { $('status').textContent = '先选一份搜索词报告'; return; }
+  const days = Math.max(1, Math.min(400, +$('days').value || 30));
+  STATE.days = days;
+  const agg = aggregateReport(STATE.report);
+  const { rows, totals } = computeRows(agg, STATE.lib, days);
+  STATE.rows = rows;
+  STATE.totals = totals;
+  $('overviewCard').style.display = '';
+  $('tableCard').style.display = '';
+  renderOverview();
+  renderTable();
+  const withK = rows.filter(r => r.sv).length;
+  $('status').innerHTML = `分析完成：报告 <b>${rows.length}</b> 个搜索词，覆盖 ${days} 天；` +
+    (STATE.lib ? `词库匹配上 <b>${withK}</b> 个词（占曝光 ${(rows.filter(r => r.sv).reduce((a, r) => a + r.imp, 0) / (totals.imp || 1) * 100).toFixed(1)}%）。` : '未选词库，k 列留空。');
+}
+
+/* ============ 交互 ============ */
+$('reportFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { const n = await loadReport(f); $('status').textContent = `已读入搜索词报告：${n} 行原始数据（${STATE.reportDays} 天）。选词库后点「开始分析」。`; }
+  catch (err) { $('status').textContent = '报告读不了：' + err.message; }
+  e.target.value = '';
+});
+$('libFiles').addEventListener('change', async e => {
+  const files = [...e.target.files]; if (!files.length) return;
+  try { const n = await loadLibs(files); $('status').textContent = `已读入 ${STATE.libFiles} 个词库，共 ${n} 个词。点「开始分析」。`; }
+  catch (err) { $('status').textContent = '词库读不了：' + err.message; }
+  e.target.value = '';
+});
+$('run').addEventListener('click', analyze);
+$('q').addEventListener('input', e => { STATE.q = e.target.value.trim(); renderTable(); });
+$('fVerdict').addEventListener('change', e => { STATE.fv = e.target.value; renderTable(); });
+document.querySelectorAll('th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.dataset.sort;
+    if (STATE.sort === k) STATE.dir *= -1; else { STATE.sort = k; STATE.dir = (k === 'kw' || k === 'verdict') ? 1 : -1; }
+    document.querySelectorAll('th[data-sort]').forEach(t => { const s = t.querySelector('.sortmark'); if (s) s.remove(); });
+    const mark = document.createElement('span'); mark.className = 'sortmark'; mark.textContent = STATE.dir > 0 ? '▲' : '▼';
+    th.appendChild(mark);
+    renderTable();
+  });
+});
+
+/* ============ 示例数据（用于自检 / 演示） ============ */
+function runDemo() {
+  const demoReport = {
+    kwCol: 0, impCol: 1, clkCol: 2, spendCol: 3, ordCol: 4, salesCol: -1,
+    rows: [
+      ['gaming chair', 66521, 149, 191.88, 11],
+      ['dowinx gaming chair', 30259, 426, 349.77, 21],
+      ['gaming chair with footrest', 25301, 161, 126.67, 6],
+      ['downix gaming chair', 18153, 311, 264.60, 26],
+      ['fabric gaming chair', 9787, 69, 78.39, 2],
+      ['silla gamer', 8859, 102, 56.08, 1],
+      ['white gaming chair', 7653, 66, 46.79, 0],
+      ['gamer chair', 2740, 56, 58.82, 2],
+      ['pink gaming chair', 5859, 54, 31.58, 1],
+      ['gaming chairs for adults', 5046, 52, 57.15, 4],
+      ['brown gaming chair', 3569, 45, 42.54, 0],
+      ['tiny word', 120, 3, 4.20, 0]
+    ]
+  };
+  const demoLib = buildLibrary([
+    { kw: 'gaming chair', monthly: 1135978 },
+    { kw: 'dowinx gaming chair', monthly: 21395 },
+    { kw: 'gaming chair with footrest', monthly: 19570 },
+    { kw: 'downix gaming chair', monthly: 9460 },
+    { kw: 'fabric gaming chair', monthly: 6455 },
+    { kw: 'silla gamer', monthly: 92889 },
+    { kw: 'white gaming chair', monthly: 26281 },
+    { kw: 'gamer chair', monthly: 59513 },
+    { kw: 'pink gaming chair', monthly: 47461 },
+    { kw: 'gaming chairs for adults', monthly: 107484 },
+    { kw: 'brown gaming chair', monthly: 2642 }
+  ]);
+  STATE.report = demoReport;
+  STATE.lib = demoLib;
+  STATE.days = 30;
+  analyze();
+  $('status').textContent = '示例数据（gaming chair 类目，30 天）。换成你自己的报告点「开始分析」即可。';
+}
+
+$('demo').addEventListener('click', runDemo);
+if (location.hash === '#demo') runDemo();
+</script>
+</body>
+</html>
