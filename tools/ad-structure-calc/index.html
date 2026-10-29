@@ -71,7 +71,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>广告结构反推测算<span class="ver">v4</span></h1>
+  <h1>广告结构反推测算<span class="ver">v4.1</span></h1>
   <div class="sub">三层结构：层级 → 广告活动 → 关键词。关键词一行一个、粘在一个框里；搜索量单独一列按行对应。活动的搜索量 = 该活动所有关键词搜索量之和（短语/广泛按精准词的搜索量计，不折算）。</div>
 
   <div class="card">
@@ -81,8 +81,11 @@
       <button class="btn" id="saveCase">保存当前为案例</button>
       <button class="btn" id="delCase">删除选中案例</button>
       <button class="btn" id="resetDefault">恢复初始模板</button>
+      <button class="btn" id="exportData" title="把全部案例 + 当前表格存成一个 .json 文件">导出 JSON</button>
+      <button class="btn" id="importData" title="从 .json 文件恢复案例（同名覆盖，其余保留）">导入 JSON</button>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     </div>
-    <div class="hint" id="caseHint">改动自动存本机（换浏览器/清缓存会丢），重要组合请点「保存当前为案例」。</div>
+    <div class="hint" id="caseHint">改动自动存本机（换浏览器/清缓存会丢）；重要思路请「保存当前为案例」。换电脑用「导出 JSON」带走、在另一台「导入 JSON」还原。</div>
   </div>
 
   <div class="card">
@@ -513,6 +516,91 @@ $('presetSel').addEventListener('change',e=>{
 $('resetDefault').addEventListener('click',()=>{
   if(!confirm('恢复初始模板？当前未保存的改动会丢失')) return;
   S=JSON.parse(JSON.stringify(TEMPLATE)); syncInputs(); build();
+});
+
+/* ============ 导出 / 导入（换电脑搬案例） ============ */
+const APP_ID='adstruct', APP_VER='4.1';
+const pad2=n=>String(n).padStart(2,'0');
+const stampNow=()=>{ const d=new Date();
+  return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate())+'-'+pad2(d.getHours())+pad2(d.getMinutes()); };
+
+$('exportData').addEventListener('click',()=>{
+  const payload=exportPayload();
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='广告结构反推测算-案例-'+stampNow()+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  $('caseHint').textContent=`已导出：${payload.cases.length} 个案例 + 当前表格（${S.groups.length} 个层级）。文件在浏览器的下载目录里。`;
+});
+
+function exportPayload(){
+  return {
+    app:APP_ID, version:APP_VER, exportedAt:new Date().toISOString(),
+    cases:loadCases(),
+    current:JSON.parse(JSON.stringify(S))
+  };
+}
+
+$('importData').addEventListener('click',()=>$('importFile').click());
+
+// 兼容三种文件形状：{cases,current} / 案例数组 / 裸表格状态
+function readImport(obj){
+  if(Array.isArray(obj)) return {cases:obj, current:null};
+  if(!obj || typeof obj!=='object') return null;
+  const cases=Array.isArray(obj.cases)?obj.cases:(Array.isArray(obj.data)?obj.data:null);
+  let current=null;
+  if(obj.current && typeof obj.current==='object' && Array.isArray(obj.current.groups)) current=obj.current;
+  else if(Array.isArray(obj.groups)) current=obj;
+  return (cases||current) ? {cases:cases||[], current} : null;
+}
+
+function applyImport(obj){
+  const pack=readImport(obj);
+  if(!pack){ alert('这个文件里没有可识别的案例数据。\n\n请用本工具的「导出 JSON」生成的文件；也接受含 groups 的表格 JSON。'); return; }
+
+  const today=new Date().toLocaleDateString('zh-CN');
+  const incoming=pack.cases.map((c,i)=>{
+    const src=(c && typeof c==='object') ? ((c.data && typeof c.data==='object') ? c.data : c) : null;
+    const name=(c && typeof c.name==='string' && c.name.trim()) ? c.name.trim() : ('导入案例 '+(i+1));
+    const time=(c && typeof c.time==='string' && c.time) ? c.time : today;
+    return {name, time, data:src};
+  }).filter(c=>c.data && Array.isArray(c.data.groups));
+
+  if(!incoming.length && !pack.current){ alert('文件里的案例都是空的，没有可导入的内容。'); return; }
+
+  const map=new Map(loadCases().map(c=>[c.name,c]));
+  let added=0, updated=0;
+  incoming.forEach(c=>{ if(map.has(c.name)) updated++; else added++; map.set(c.name,c); });
+  const merged=[...map.values()];
+  saveCases(merged); refreshCases();
+
+  let msg=`导入完成：新增 ${added} 个、同名覆盖 ${updated} 个，现有 ${merged.length} 个案例。`;
+  if(pack.current){
+    const tip=msg+`\n\n文件里还带了一份当前表格（${pack.current.groups.length} 个层级）。\n要一并载入、替换现在页面上的表格吗？\n\n确定＝载入　取消＝只导入案例`;
+    if(confirm(tip)){
+      S=normalize(JSON.parse(JSON.stringify(pack.current)));
+      syncInputs(); build();
+      msg+='已同时载入文件里的当前表格。';
+    }
+  }
+  $('caseHint').textContent=msg;
+}
+
+$('importFile').addEventListener('change',e=>{
+  const f=e.target.files && e.target.files[0];
+  if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let obj;
+    try{ obj=JSON.parse(rd.result); }
+    catch(err){ alert('文件不是有效的 JSON：'+err.message); e.target.value=''; return; }
+    try{ applyImport(obj); } catch(err){ alert('导入失败：'+err.message); }
+    e.target.value='';
+  };
+  rd.onerror=()=>{ alert('读不到这个文件，换一个试试。'); e.target.value=''; };
+  rd.readAsText(f,'utf-8');
 });
 $('addGroup').addEventListener('click',()=>{
   S.groups.push({name:'新层级', open:true, rows:[
