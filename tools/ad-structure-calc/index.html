@@ -20,14 +20,17 @@
   .card h2{font-size:13px;margin:0 0 12px;color:var(--dim);font-weight:600;letter-spacing:.4px}
   .grid{display:grid;gap:10px}
   .g4{grid-template-columns:repeat(4,1fr)}
-  @media(max-width:860px){.g4{grid-template-columns:repeat(2,1fr)}}
+  .g5{grid-template-columns:repeat(5,1fr)}
+  .g6{grid-template-columns:repeat(6,1fr)}
+  @media(max-width:1000px){.g6{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:860px){.g4,.g5,.g6{grid-template-columns:repeat(2,1fr)}}
   label{display:block;font-size:11px;color:var(--dim);margin-bottom:4px}
   input,select{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:7px;
     color:var(--txt);padding:7px 8px;font-size:14px;font-variant-numeric:tabular-nums}
   input:focus,select:focus{outline:none;border-color:var(--blue)}
   .uw{position:relative}
   .uw .suf{position:absolute;right:8px;top:7px;color:var(--dim);font-size:12px}
-  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}
   th{font-size:11px;color:var(--dim);font-weight:600;text-align:right;padding:0 5px 7px;
     border-bottom:1px solid var(--line);white-space:nowrap}
   th.l{text-align:left}
@@ -39,6 +42,10 @@
   tr.grp td{border-bottom:1px solid #33404e;padding:10px 5px;font-size:13.5px;color:#e4ebf3;font-weight:600}
   tr.grp td.first{text-align:left;border-left:4px solid var(--acc,#4c9aff);padding-left:8px}
   tr.grp input.name{font-weight:600;font-size:13.5px}
+  tr.grp input.name,tr.act input.name{background:transparent;border-color:transparent;
+    text-overflow:ellipsis}
+  tr.grp input.name:hover,tr.act input.name:hover{border-color:#3a4757}
+  tr.grp input.name:focus,tr.act input.name:focus{background:var(--card2);border-color:var(--blue)}
   tr.act{background:#171c23}
   tr.act td:first-child{border-left:4px solid transparent;padding-left:22px}
   tr.kw{background:#14181d;font-size:12px}
@@ -57,12 +64,40 @@
     border-radius:7px;padding:7px 12px;font-size:13px;cursor:pointer}
   .btn:hover{border-color:var(--blue)}
   .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .bar>*{flex:0 0 auto}
+  .bar select{width:auto;min-width:210px}
   .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+  .sum.g5{grid-template-columns:repeat(5,1fr)}
+  .sum.g6{grid-template-columns:repeat(6,1fr)}
   @media(max-width:860px){.sum{grid-template-columns:repeat(2,1fr)}}
   .kv{background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:11px}
   .kv .k{font-size:11px;color:var(--dim);margin-bottom:4px}
   .kv .v{font-size:18px;font-weight:650;font-variant-numeric:tabular-nums}
   .kv .n{font-size:11px;color:var(--dim);margin-top:3px}
+  .modebar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:12px;
+    padding-top:11px;border-top:1px dashed #2b333d}
+  .modebar label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:#cfd8e2;
+    margin:0;cursor:pointer;white-space:nowrap}
+  .modebar input[type=radio]{width:auto;margin:0}
+  .orgbox{display:flex;align-items:center;gap:7px}
+  .orgbox input{width:72px}
+  .orgbox.off{opacity:.45}
+  .sect{margin-bottom:16px}
+  .sect:last-of-type{margin-bottom:4px}
+  .sect-h{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#cfd8e2;
+    font-weight:600;margin:2px 0 9px}
+  .dot{width:7px;height:7px;border-radius:2px;display:inline-block;flex:0 0 7px}
+  .dot.blue{background:#4c9aff} .dot.gray{background:#8b97a6} .dot.green{background:#31c48d}
+  .sect-note{color:var(--dim);font-weight:400;font-size:11px}
+  .cmp{background:var(--card2);border:1px solid var(--line);border-radius:9px;
+    padding:11px 12px;margin-bottom:10px}
+  .cmp-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;
+    margin-bottom:8px;font-variant-numeric:tabular-nums}
+  .cmp-pct{font-weight:700;font-size:14px}
+  .cmpbar{position:relative;height:9px;background:#12161b;border-radius:5px;overflow:hidden;
+    border:1px solid #232b34}
+  .fill{height:100%;width:0;background:linear-gradient(90deg,#31c48d,#4c9aff);transition:width .25s}
+  .fill.over{background:linear-gradient(90deg,#f0a93b,#f05252)}
   .verdict{margin-top:12px;padding:13px 15px;border-radius:9px;font-size:14px;
     border:1px solid var(--line);background:var(--card2)}
   .hint{color:var(--dim);font-size:11px;margin-top:8px;line-height:1.65}
@@ -71,7 +106,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>广告结构反推测算<span class="ver">v4.1</span></h1>
+  <h1>广告结构反推测算<span class="ver">v5.1</span></h1>
   <div class="sub">三层结构：层级 → 广告活动 → 关键词。关键词一行一个、粘在一个框里；搜索量单独一列按行对应。活动的搜索量 = 该活动所有关键词搜索量之和（短语/广泛按精准词的搜索量计，不折算）。</div>
 
   <div class="card">
@@ -93,8 +128,16 @@
     <div class="grid g4">
       <div><label>售价 $</label><div class="uw"><input id="price" type="number" step="0.01" value="129.99"><span class="suf">$</span></div></div>
       <div><label>单件毛利 $（除广告外含所有成本）</label><div class="uw"><input id="margin" type="number" step="0.01" value="25.03"><span class="suf">$</span></div></div>
-      <div><label>目标日销（单/天）</label><input id="target" type="number" step="1" value="10"></div>
+      <div><label>目标日销（总单/天）</label><input id="target" type="number" step="1" value="15"></div>
       <div><label>ACoAS 目标（参考）</label><div class="uw"><input id="acoas" type="number" step="0.5" value="10"><span class="suf">%</span></div></div>
+    </div>
+    <div class="modebar">
+      <label><input type="radio" name="mode" value="new" checked> 新品（全部靠广告）</label>
+      <label><input type="radio" name="mode" value="old"> 老品优化（有自然单）</label>
+      <div class="orgbox off" id="orgWrap">
+        <span style="font-size:12.5px;color:#cfd8e2">自然订单占比</span>
+        <div class="uw"><input id="orgRate" type="number" step="5" value="40" disabled><span class="suf">%</span></div>
+      </div>
     </div>
   </div>
 
@@ -102,6 +145,13 @@
     <h2>广告结构（点 ▸ 展开活动下的关键词）</h2>
     <div style="overflow-x:auto">
       <table>
+        <colgroup>
+          <col style="width:320px">
+          <col style="width:92px"><col style="width:96px"><col style="width:76px">
+          <col style="width:86px"><col style="width:72px"><col style="width:78px">
+          <col style="width:70px"><col style="width:64px"><col style="width:78px">
+          <col style="width:76px"><col style="width:30px">
+        </colgroup>
         <thead>
           <tr>
             <th class="l" style="min-width:210px">层级 / 广告活动 / 关键词</th>
@@ -132,26 +182,55 @@
 
   <div class="card">
     <h2>汇总与对比</h2>
-    <div class="sum">
-      <div class="kv"><div class="k">广告实花 / 天</div><div class="v" id="sSpend">—</div><div class="n" id="sSpendN">—</div></div>
-      <div class="kv"><div class="k">预计单量 / 天</div><div class="v" id="sOrders">—</div><div class="n" id="sOrdersN">—</div></div>
-      <div class="kv"><div class="k">综合 CPA</div><div class="v" id="sCpa">—</div><div class="n" id="sCpaN">—</div></div>
-      <div class="kv"><div class="k">平本花费 / 天</div><div class="v" id="sBreak">—</div><div class="n" id="sBreakN">—</div></div>
-      <div class="kv"><div class="k">平本 ACoAS</div><div class="v" id="sBreakAcoas">—</div><div class="n" id="sBreakAcoasN">—</div></div>
-      <div class="kv"><div class="k">差额（平本 − 实花）</div><div class="v" id="sGap">—</div><div class="n" id="sGapN">—</div></div>
-      <div class="kv"><div class="k">差额 %</div><div class="v" id="sGapP">—</div><div class="n">正=有余量 / 负=超支</div></div>
-      <div class="kv"><div class="k">实际 ACoAS</div><div class="v" id="sAcoas">—</div><div class="n" id="sAcoasN">—</div></div>
-      <div class="kv"><div class="k">实际利润率</div><div class="v" id="sProfit">—</div><div class="n" id="sProfitN">—</div></div>
+
+    <div class="sect">
+      <div class="sect-h"><span class="dot blue"></span>① 结构产出
+        <span class="sect-note">随预算 / 关键词 / CPC 变化</span></div>
+      <div class="sum g6">
+        <div class="kv"><div class="k">广告实花 / 天</div><div class="v" id="sSpend">—</div><div class="n" id="sSpendN">—</div></div>
+        <div class="kv"><div class="k">点击 / 天</div><div class="v" id="sClicks">—</div><div class="n" id="sClicksN">—</div></div>
+        <div class="kv"><div class="k">广告单 / 天</div><div class="v" id="sOrders">—</div><div class="n" id="sOrdersN">—</div></div>
+        <div class="kv"><div class="k">自然单 / 天</div><div class="v" id="sOrganic">—</div><div class="n" id="sOrganicN">—</div></div>
+        <div class="kv"><div class="k">合计单 / 天</div><div class="v" id="sTotal">—</div><div class="n" id="sTotalN">—</div></div>
+        <div class="kv"><div class="k">综合 CPA</div><div class="v" id="sCpa">—</div><div class="n" id="sCpaN">—</div></div>
+      </div>
     </div>
+
+    <div class="sect">
+      <div class="sect-h"><span class="dot gray"></span>② 平本基准
+        <span class="sect-note">只跟售价 / 单件毛利 / 目标日销有关，与广告结构无关</span></div>
+      <div class="sum">
+        <div class="kv"><div class="k">平本 ACoAS</div><div class="v" id="sBreakAcoas">—</div><div class="n" id="sBreakAcoasN">—</div></div>
+        <div class="kv"><div class="k">平本花费 / 天</div><div class="v" id="sBreak">—</div><div class="n" id="sBreakN">—</div></div>
+        <div class="kv"><div class="k">单件毛利</div><div class="v" id="sMargin">—</div><div class="n" id="sMarginN">—</div></div>
+        <div class="kv"><div class="k">目标日销</div><div class="v" id="sTarget">—</div><div class="n" id="sTargetN">—</div></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="sect-h"><span class="dot green"></span>③ 对比结论
+        <span class="sect-note">实花 vs 平本花费</span></div>
+      <div class="cmp">
+        <div class="cmp-top"><span id="cmpText">—</span><span class="cmp-pct" id="cmpPct">—</span></div>
+        <div class="cmpbar"><div class="fill" id="cmpFill"></div></div>
+      </div>
+      <div class="sum">
+        <div class="kv"><div class="k">差额 / 天</div><div class="v" id="sGap">—</div><div class="n" id="sGapN">—</div></div>
+        <div class="kv"><div class="k">差额 %</div><div class="v" id="sGapP">—</div><div class="n">正=有余量 / 负=超支</div></div>
+        <div class="kv"><div class="k">实际 ACoAS</div><div class="v" id="sAcoas">—</div><div class="n" id="sAcoasN">—</div></div>
+        <div class="kv"><div class="k">实际利润率</div><div class="v" id="sProfit">—</div><div class="n" id="sProfitN">—</div></div>
+      </div>
+    </div>
+
     <div class="verdict" id="verdict">—</div>
-    <div class="hint">平本 ACoAS = 单件毛利 ÷ 售价（利润为 0 时广告费占销售额的上限）；平本花费 = 单件毛利 × 目标日销（利润为 0 时每天最多能花的广告费）。单量为线性外推，未考虑竞价被抬高。</div>
+    <div class="hint">平本 ACoAS = 单件毛利 ÷ 售价（利润为 0 时广告费占销售额的上限）；平本花费 = 单件毛利 × 合计单量（广告单 + 自然单，利润为 0 时每天最多能花的广告费）。单量为线性外推，未考虑竞价被抬高。</div>
   </div>
 </div>
 
 <script>
 const MATCH = ['精准','短语','广泛','自动','ASIN 投放','类目投放','品牌广告'];
 const TEMPLATE = {
-  price:129.99, margin:25.03, target:10, acoas:10,
+  price:129.99, margin:25.03, target:10, acoas:10, mode:'new', orgRate:40,
   groups:[
     {name:'T1 大词', open:true, rows:[
       {name:'SP-精准-gaming chair', match:'精准', ctr:0.50, budget:8, cpc:1.38, cvr:4.5, open:false,
@@ -233,9 +312,11 @@ function build(){
     trg.style.setProperty('--acc', ACC[gi%ACC.length]);
     trg.innerHTML=`
       <td class="first">
-        <button class="caret" data-tg="${gi}">${g.open?'▼':'▶'}</button>
-        <input class="name" data-g="${gi}" data-f="gname" value="${g.name}" style="width:130px">
-        <button class="addc" data-add="${gi}">+ 活动</button>
+        <div style="display:flex;align-items:center;gap:5px;min-width:0">
+          <button class="caret" data-tg="${gi}">${g.open?'▼':'▶'}</button>
+          <input class="name" data-g="${gi}" data-f="gname" value="${g.name}" style="flex:1;min-width:90px">
+          <button class="addc" data-add="${gi}">+ 活动</button>
+        </div>
         <div class="wc" id="gmeta${gi}">${g.rows.length} 个活动 / ${g.rows.reduce((a,r)=>a+(r.kws||[]).length,0)} 个词</div>
       </td>
       <td id="gact${gi}" class="wc">${g.rows.length} 个活动</td>
@@ -258,9 +339,11 @@ function build(){
       const tra=document.createElement('tr'); tra.className='act';
       tra.innerHTML=`
         <td class="l">
-          <button class="caret" data-ta="${gi}_${ri}">${r.open?'▼':'▶'}</button>
-          <input class="name" data-g="${gi}" data-r="${ri}" data-f="name" value="${r.name}" style="width:190px">
-          <button class="addc" data-addkw="${gi}_${ri}">+ 词</button>
+          <div style="display:flex;align-items:center;gap:5px;min-width:0">
+            <button class="caret" data-ta="${gi}_${ri}">${r.open?'▼':'▶'}</button>
+            <input class="name" data-g="${gi}" data-r="${ri}" data-f="name" value="${r.name}" style="flex:1;min-width:120px">
+            <button class="addc" data-addkw="${gi}_${ri}">+ 词</button>
+          </div>
         </td>
         <td><select data-g="${gi}" data-r="${ri}" data-f="match">${MATCH.map(m=>`<option ${m===r.match?'selected':''}>${m}</option>`).join('')}</select></td>
         <td><span id="asv${gi}_${ri}">${svw(c.sv)}</span><div class="wc" id="kwc${gi}_${ri}">${(r.kws||[]).length} 个词</div></td>
@@ -392,6 +475,8 @@ function schedule(){ clearTimeout(timer); timer=setTimeout(calc,600); }
 function calc(){
   const price=+$('price').value||0, marg=+$('margin').value||0;
   const target=+$('target').value||0, acoas=(+$('acoas').value||0)/100;
+  const isOld = S.mode==='old';
+  const orgPct = isOld ? Math.min(Math.max((+$('orgRate').value||0)/100,0),0.95) : 0;
 
   let spend=0, orders=0, clicks=0, budget=0, svAll=0;
   S.groups.forEach((g,gi)=>{
@@ -438,12 +523,14 @@ function calc(){
   });
 
   const cpa=orders>0?spend/orders:0;
-  const realAcoas=(price*orders)>0?spend/(price*orders)*100:0;
-  const revenue=price*orders;
-  const profit=marg*orders-spend;
+  const organicOrders = target*orgPct;        // 自然单（目标口径）
+  const totalOrders = orders + organicOrders;  // 合计单
+  const realAcoas=(price*totalOrders)>0?spend/(price*totalOrders)*100:0;
+  const revenue=price*totalOrders;
+  const profit=marg*totalOrders-spend;
   const profitRate=revenue>0?profit/revenue*100:0;
 
-  const breakEven=marg*target;
+  const breakEven=marg*totalOrders;   // 平本花费 = 毛利 × 合计单量（含自然单）
   const cap=breakEven;
   const gap=cap-spend;
   const gapP=cap>0?gap/cap*100:0;
@@ -452,12 +539,16 @@ function calc(){
   $('sSpend').textContent=money(spend);
   $('sSpendN').textContent=`预算合计 ${money(budget)}/天${budget-spend>0.5?`｜花不完 ${money(budget-spend)}`:''}｜月 ${money(spend*30)}`;
   $('sOrders').textContent=orders.toFixed(1)+' 单';
-  $('sOrdersN').textContent=`月 ${num(orders*30)} 单｜目标 ${target}/天（达成 ${target>0?(orders/target*100).toFixed(1):'0.0'}%）`;
+  $('sOrdersN').textContent=`月 ${num(orders*30)} 单`;
+  $('sOrganic').textContent=organicOrders.toFixed(1)+' 单';
+  $('sOrganicN').textContent = isOld ? `占目标 ${(orgPct*100).toFixed(0)}%（不花广告费）` : '新品模式：无自然单';
+  $('sTotal').textContent=totalOrders.toFixed(1)+' 单';
+  $('sTotalN').textContent=`目标 ${target}/天（达成 ${target>0?(totalOrders/target*100).toFixed(0):'0'}%）`;
   $('sCpa').textContent=cpa>0?money(cpa):'—';
   $('sCpaN').textContent = cpa<=0?'—':(cpa>marg?`超过保本线（毛利 ${money(marg)}）`
       :(cpa>marg*0.5?`在保本线内，吃掉 ${((cpa/marg)*100).toFixed(0)}% 毛利`:`健康（低于毛利一半）`));
   $('sBreak').textContent=money(cap);
-  $('sBreakN').textContent=`毛利 ${money(marg)} × 目标 ${target} 单`;
+  $('sBreakN').textContent=`毛利 ${money(marg)} × 合计 ${totalOrders.toFixed(1)} 单`;
   $('sBreakAcoas').textContent=breakAcoasVal.toFixed(1)+'%';
   $('sBreakAcoasN').textContent=`毛利 ${money(marg)} ÷ 售价 ${money(price)}`;
 
@@ -475,19 +566,53 @@ function calc(){
   $('sProfit').className='v '+(profitRate>=0?'good':'bad');
   $('sProfitN').textContent=`日利润 ${money(profit)}｜单件毛利 ${money(marg)}`;
 
-  const gapOrders=target-orders;
+  // 新增卡片
+  const setT=(id,v)=>{const e=$(id); if(e) e.textContent=v;};
+  setT('sClicks', num(clicks));
+  setT('sClicksN', clicks>0?`平均 CPC ${money(spend/clicks)}`:'—');
+  setT('sMargin', money(marg));
+  setT('sMarginN', `售价 ${money(price)}，占 ${price>0?((marg/price)*100).toFixed(1):'0.0'}%`);
+  setT('sTarget', target+' 单');
+  setT('sTargetN', `月 ${num(target*30)} 单`);
+
+  const usedPct = cap>0 ? spend/cap*100 : 0;
+  const cmpT=$('cmpText');
+  if(cmpT) cmpT.innerHTML = `实花 <b>${money(spend)}</b> <span style="color:#8b97a6">／ 平本</span> <b>${money(cap)}</b>`;
+  const cmpP=$('cmpPct');
+  if(cmpP){ cmpP.textContent = `用掉 ${usedPct.toFixed(1)}%`; cmpP.style.color = usedPct>100?'#f05252':(usedPct>80?'#f0a93b':'#31c48d'); }
+  const fill=$('cmpFill');
+  if(fill){ fill.style.width = Math.min(usedPct,100).toFixed(1)+'%'; fill.className = 'fill'+(usedPct>100?' over':''); }
+
+  const gapOrders=target-totalOrders;
   const needMore=cpa>0?gapOrders*cpa:0;
   $('verdict').innerHTML =
-    `按目标 ${target} 单/天算，平本花费 <b>${money(cap)}/天</b>，当前结构实花 <b>${money(spend)}/天</b> → `+
+    `按合计 ${totalOrders.toFixed(1)} 单/天算，平本花费 <b>${money(cap)}/天</b>，当前结构实花 <b>${money(spend)}/天</b> → `+
     `<span class="${gap>=0?'good':'bad'}"><b>${gap>=0?'赚（有余量）':'亏（超支）'} ${Math.abs(gapP).toFixed(1)}%</b></span>`+
     `（差额 ${money(Math.abs(gap))}/天，月 ${money(Math.abs(gap)*30)}）`+
-    `<br><span style="color:#8b97a6;font-size:13px">实际 ACoAS ${realAcoas.toFixed(1)}%｜${orders.toFixed(1)} 单/天｜综合 CPA ${money(cpa)}｜日利润 ${money(profit)}</span>`+
-    `<br><span style="color:${gapOrders>0?'#f0a93b':'#31c48d'};font-size:13px">目标 ${target} 单/天 vs 结构 ${orders.toFixed(1)} 单/天：`+
+    `<br><span style="color:#8b97a6;font-size:13px">实际 ACoAS ${realAcoas.toFixed(1)}%｜广告 ${orders.toFixed(1)} + 自然 ${organicOrders.toFixed(1)} = ${totalOrders.toFixed(1)} 单/天｜综合 CPA ${money(cpa)}｜日利润 ${money(profit)}</span>`+
+    `<br><span style="color:${gapOrders>0?'#f0a93b':'#31c48d'};font-size:13px">目标 ${target} 单/天 vs 合计 ${totalOrders.toFixed(1)} 单/天：`+
     (gapOrders>0
       ? `还差 ${gapOrders.toFixed(1)} 单/天，按当前 CPA 需再加 ${money(needMore)}/天预算（或提转化率，把 CPA 压到 ${money(cap/target)} 以内）`
       : `已达成，富余 ${Math.abs(gapOrders).toFixed(1)} 单/天`)+`</span>`;
 
   saveLast();
+
+  // 列对齐自检
+  try{
+    const thN = document.querySelectorAll('thead th').length;
+    const bad = [...document.querySelectorAll('#tbody tr')]
+      .filter(tr => !tr.querySelector('td[colspan]') && tr.children.length !== thN);
+    let warn = document.getElementById('alignWarn');
+    if(bad.length){
+      if(!warn){
+        warn = document.createElement('div');
+        warn.id='alignWarn';
+        warn.style.cssText='margin:8px 0 0;padding:8px 10px;border-radius:8px;background:#3a1f1f;color:#ff9b9b;font-size:12px';
+        document.querySelector('table').parentElement.appendChild(warn);
+      }
+      warn.textContent = `⚠ 结构异常：有 ${bad.length} 行的单元格数与表头不一致（可能是旧版文件或有手工改动）`;
+    } else if(warn){ warn.remove(); }
+  }catch(e){}
 }
 
 function refreshCases(){
@@ -519,10 +644,18 @@ $('resetDefault').addEventListener('click',()=>{
 });
 
 /* ============ 导出 / 导入（换电脑搬案例） ============ */
-const APP_ID='adstruct', APP_VER='4.1';
+const APP_ID='adstruct', APP_VER='5.1';
 const pad2=n=>String(n).padStart(2,'0');
 const stampNow=()=>{ const d=new Date();
   return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate())+'-'+pad2(d.getHours())+pad2(d.getMinutes()); };
+
+function exportPayload(){
+  return {
+    app:APP_ID, version:APP_VER, exportedAt:new Date().toISOString(),
+    cases:loadCases(),
+    current:JSON.parse(JSON.stringify(S))
+  };
+}
 
 $('exportData').addEventListener('click',()=>{
   const payload=exportPayload();
@@ -534,14 +667,6 @@ $('exportData').addEventListener('click',()=>{
   setTimeout(()=>URL.revokeObjectURL(url),2000);
   $('caseHint').textContent=`已导出：${payload.cases.length} 个案例 + 当前表格（${S.groups.length} 个层级）。文件在浏览器的下载目录里。`;
 });
-
-function exportPayload(){
-  return {
-    app:APP_ID, version:APP_VER, exportedAt:new Date().toISOString(),
-    cases:loadCases(),
-    current:JSON.parse(JSON.stringify(S))
-  };
-}
 
 $('importData').addEventListener('click',()=>$('importFile').click());
 
@@ -609,7 +734,21 @@ $('addGroup').addEventListener('click',()=>{
 });
 function syncInputs(){
   $('price').value=S.price; $('margin').value=S.margin; $('target').value=S.target; $('acoas').value=S.acoas;
+  const old = (S.mode==='old');
+  const r = document.querySelector(`input[name=mode][value="${old?'old':'new'}"]`); if(r) r.checked=true;
+  if($('orgRate')){ $('orgRate').value = S.orgRate ?? 40; $('orgRate').disabled=!old; $('orgWrap').classList.toggle('off', !old); }
 }
+document.querySelectorAll('input[name=mode]').forEach(r=>{
+  r.addEventListener('change', e=>{
+    S.mode = e.target.value;
+    const old = S.mode==='old';
+    $('orgRate').disabled = !old;
+    $('orgWrap').classList.toggle('off', !old);
+    schedule();
+  });
+});
+$('orgRate').addEventListener('input', e=>{ S.orgRate=parseFloat(e.target.value)||0; schedule(); });
+
 ['price','margin','target','acoas'].forEach(id=>{
   $(id).addEventListener('input',e=>{
     S[id]=parseFloat(e.target.value)||0; schedule();
