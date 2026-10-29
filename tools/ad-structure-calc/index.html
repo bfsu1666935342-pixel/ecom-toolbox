@@ -35,10 +35,12 @@
   td.l{text-align:left}
   td input,td select{padding:5px 6px;font-size:13px;text-align:right}
   td input.name{text-align:left}
-  tr.grp{background:#1a1f26}
-  tr.grp td{border-bottom:1px solid #2b333d}
-  tr.grp td.first{text-align:left;font-weight:600}
-  tr.act{background:#161a20}
+  tr.grp{background:#202834;border-top:2px solid #3a4757}
+  tr.grp td{border-bottom:1px solid #33404e;padding:10px 5px;font-size:13.5px;color:#e4ebf3;font-weight:600}
+  tr.grp td.first{text-align:left;border-left:4px solid var(--acc,#4c9aff);padding-left:8px}
+  tr.grp input.name{font-weight:600;font-size:13.5px}
+  tr.act{background:#171c23}
+  tr.act td:first-child{border-left:4px solid transparent;padding-left:22px}
   tr.kw{background:#14181d;font-size:12px}
   tr.kw td{color:#b9c4d0;border-bottom:1px dashed #232a32;padding:3px 5px}
   .caret{background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;padding:0 3px}
@@ -69,7 +71,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>广告结构反推测算<span class="ver">v3.1</span></h1>
+  <h1>广告结构反推测算<span class="ver">v4</span></h1>
   <div class="sub">三层结构：层级 → 广告活动 → 关键词。关键词一行一个、粘在一个框里；搜索量单独一列按行对应。活动的搜索量 = 该活动所有关键词搜索量之和（短语/广泛按精准词的搜索量计，不折算）。</div>
 
   <div class="card">
@@ -211,7 +213,8 @@ function rowCalc(r){
   const orders = clicks*(r.cvr/100);
   const spend = clicks*r.cpc;
   const cpa = orders>0 ? spend/orders : 0;
-  return {sv, capClicks, buyClicks, clicks, orders, spend, cpa, limited};
+  const imps = (r.ctr>0 && clicks>0) ? clicks/(r.ctr/100) : 0;
+  return {sv, capClicks, buyClicks, clicks, orders, spend, cpa, limited, imps};
 }
 
 function build(){
@@ -222,20 +225,26 @@ function build(){
       return a;},{clicks:0,orders:0,spend:0,budget:0,sv:0});
     const gCpa = agg.orders>0?agg.spend/agg.orders:0;
 
+    const ACC=['#4c9aff','#31c48d','#f0a93b','#b47cff','#f05252','#2ec5c5','#e08a3c'];
     const trg=document.createElement('tr'); trg.className='grp';
+    trg.style.setProperty('--acc', ACC[gi%ACC.length]);
     trg.innerHTML=`
       <td class="first">
         <button class="caret" data-tg="${gi}">${g.open?'▼':'▶'}</button>
-        <input class="name" data-g="${gi}" data-f="gname" value="${g.name}" style="width:118px">
+        <input class="name" data-g="${gi}" data-f="gname" value="${g.name}" style="width:130px">
         <button class="addc" data-add="${gi}">+ 活动</button>
+        <div class="wc" id="gmeta${gi}">${g.rows.length} 个活动 / ${g.rows.reduce((a,r)=>a+(r.kws||[]).length,0)} 个词</div>
       </td>
-      <td></td>
+      <td id="gact${gi}" class="wc">${g.rows.length} 个活动</td>
       <td id="gsv${gi}">${num(agg.sv)}</td>
-      <td>—</td><td id="gbud${gi}">${num(agg.budget)}</td><td>—</td><td>—</td>
+      <td id="gctr${gi}">—</td>
+      <td id="gbud${gi}">${num(agg.budget)}</td>
+      <td id="gcpc${gi}">—</td>
+      <td id="gcvr${gi}">—</td>
       <td id="gclk${gi}">${num(agg.clicks)}</td>
       <td id="gord${gi}">${agg.orders.toFixed(2)}</td>
       <td id="gcpa${gi}">${gCpa?money(gCpa):'—'}</td>
-      <td></td>
+      <td id="gst${gi}">—</td>
       <td><button class="del" data-dg="${gi}" title="删除层级">×</button></td>`;
     tb.appendChild(trg);
 
@@ -269,18 +278,19 @@ function build(){
         <td colspan="12" style="padding:2px 6px 10px 24px">
           <div style="display:flex;gap:10px;align-items:flex-start">
             <div style="flex:1;min-width:240px">
-              <label>关键词（一行一个；直接从 Excel 粘两列也可以：词 + 搜索量，用 Tab 隔开）</label>
+              <label style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+                title="一行一个关键词；也可直接从 Excel 粘两列（词 + 搜索量，Tab 分隔）">关键词（一行一个；也可粘两列：词 + 搜索量）</label>
               <textarea data-kwbox="${gi}_${ri}" rows="${Math.max(3, Math.min(10, (r.kws||[]).length+1))}"
                 style="width:100%;background:var(--card2);border:1px solid var(--line);border-radius:7px;
                 color:var(--txt);padding:7px 8px;font:12px/1.6 ui-monospace,Menlo,monospace;resize:vertical">${kwText}</textarea>
             </div>
-            <div style="width:150px">
-              <label>月搜索量（一行一个，按行对应）</label>
+            <div style="width:132px;flex:0 0 132px">
+              <label style="white-space:nowrap" title="一行一个搜索量，按行与左侧关键词对应">月搜索量（逐行对应）</label>
               <textarea data-svbox="${gi}_${ri}" rows="${Math.max(3, Math.min(10, (r.kws||[]).length+1))}"
                 style="width:100%;background:var(--card2);border:1px solid var(--line);border-radius:7px;
                 color:var(--txt);padding:7px 8px;font:12px/1.6 ui-monospace,Menlo,monospace;text-align:right;resize:vertical">${svText}</textarea>
             </div>
-            <div style="width:104px;padding-top:18px">
+            <div style="width:96px;flex:0 0 96px;padding-top:18px">
               <div class="wc">词数</div>
               <div style="font-size:15px;font-weight:600" id="kwn${gi}_${ri}">${(r.kws||[]).length}</div>
               <div class="wc" style="margin-top:4px">合计搜索量</div>
@@ -382,10 +392,11 @@ function calc(){
 
   let spend=0, orders=0, clicks=0, budget=0, svAll=0;
   S.groups.forEach((g,gi)=>{
-    let gsp=0,gor=0,gcl=0,gbu=0,gsv=0;
+    let gsp=0,gor=0,gcl=0,gbu=0,gsv=0,gimp=0,glim=0;
     g.rows.forEach((r,ri)=>{
       const c=rowCalc(r);
-      gsp+=c.spend; gor+=c.orders; gcl+=c.clicks; gbu+=r.budget; gsv+=c.sv;
+      gsp+=c.spend; gor+=c.orders; gcl+=c.clicks; gbu+=r.budget; gsv+=c.sv; gimp+=c.imps;
+      if(c.limited) glim++;
       const el=$('clk'+gi+'_'+ri);
       if(el){
         el.textContent=num(c.clicks);
@@ -409,6 +420,18 @@ function calc(){
     const set=(id,v)=>{const el=$(id); if(el) el.textContent=v;};
     set('gsv'+gi,num(gsv)); set('gbud'+gi,num(gbu)); set('gclk'+gi,num(gcl));
     set('gord'+gi,gor.toFixed(2)); set('gcpa'+gi,gor>0?money(gsp/gor):'—');
+    set('gact'+gi, g.rows.length+' 个活动');
+    set('gctr'+gi, gimp>0 ? (gcl/gimp*100).toFixed(2)+'%' : '—');
+    set('gcvr'+gi, gcl>0 ? (gor/gcl*100).toFixed(1)+'%' : '—');
+    set('gcpc'+gi, gcl>0 ? money(gsp/gcl) : '—');
+    const gstEl=$('gst'+gi);
+    if(gstEl){
+      gstEl.innerHTML = glim>0
+        ? `<span class="lim">${glim} 个受限</span>`
+        : `<span class="ok">${gcl>0?'全通':'—'}</span>`;
+    }
+    const gm=$('gmeta'+gi);
+    if(gm) gm.textContent = g.rows.length+' 个活动 / '+g.rows.reduce((a,r)=>a+(r.kws||[]).length,0)+' 个词';
   });
 
   const cpa=orders>0?spend/orders:0;
