@@ -100,13 +100,26 @@
   .fill.over{background:linear-gradient(90deg,#f0a93b,#f05252)}
   .verdict{margin-top:12px;padding:13px 15px;border-radius:9px;font-size:14px;
     border:1px solid var(--line);background:var(--card2)}
+  .modal{position:fixed;inset:0;background:rgba(6,9,12,.74);display:none;align-items:center;
+    justify-content:center;z-index:60;padding:16px}
+  .modal.on{display:flex}
+  .modal .box{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:18px;width:100%;max-width:560px;max-height:86vh;overflow:auto}
+  .modal h3{margin:0 0 6px;font-size:15px}
+  .modal .sub2{color:var(--dim);font-size:12px;margin-bottom:14px}
+  .modal .mrow{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+  .modal .mrow>label{width:104px;flex:0 0 104px;margin:0;font-size:12px;color:var(--dim)}
+  .modal .mrow select,.modal .mrow input{flex:1;min-width:0}
+  .modal .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+  .badge{display:inline-block;font-size:11px;padding:1px 6px;border-radius:5px;
+    background:#202a36;color:#9fb0c3;border:1px solid #2f3c4b;margin-left:6px}
   .hint{color:var(--dim);font-size:11px;margin-top:8px;line-height:1.65}
   .wc{color:var(--dim);font-size:11px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>广告结构反推测算<span class="ver">v5.1</span></h1>
+  <h1>广告结构反推测算<span class="ver">v6</span></h1>
   <div class="sub">三层结构：层级 → 广告活动 → 关键词。关键词一行一个、粘在一个框里；搜索量单独一列按行对应。活动的搜索量 = 该活动所有关键词搜索量之和（短语/广泛按精准词的搜索量计，不折算）。</div>
 
   <div class="card">
@@ -121,6 +134,18 @@
       <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     </div>
     <div class="hint" id="caseHint">改动自动存本机（换浏览器/清缓存会丢）；重要思路请「保存当前为案例」。换电脑用「导出 JSON」带走、在另一台「导入 JSON」还原。</div>
+  </div>
+
+  <div class="card">
+    <h2>关键词库（搜索量）</h2>
+    <div class="bar">
+      <button class="btn" id="kwImport">导入搜索量表格（xlsx / csv）</button>
+      <input type="file" id="kwFiles" accept=".xlsx,.csv,.tsv,.txt" multiple style="display:none">
+      <select id="kwLibSel" style="max-width:300px"><option value="">— 未导入词库 —</option></select>
+      <button class="btn" id="kwFill">用词库补全搜索量</button>
+      <button class="btn" id="kwDel">删除该词库</button>
+    </div>
+    <div class="hint" id="kwHint">支持西柚（父体分析 / 以词找词）、卖家精灵（ReverseASIN / asinKeywords）等导出：自动识别关键词列与搜索量列，周搜索量按 ×4.33 折算成月。词库只存本机，<b>不联网</b>；识别不出来时会弹面板让你手动指定列。</div>
   </div>
 
   <div class="card">
@@ -224,6 +249,22 @@
 
     <div class="verdict" id="verdict">—</div>
     <div class="hint">平本 ACoAS = 单件毛利 ÷ 售价（利润为 0 时广告费占销售额的上限）；平本花费 = 单件毛利 × 合计单量（广告单 + 自然单，利润为 0 时每天最多能花的广告费）。单量为线性外推，未考虑竞价被抬高。</div>
+  </div>
+</div>
+
+<div class="modal" id="kwMap">
+  <div class="box">
+    <h3>选择关键词列 / 搜索量列</h3>
+    <div class="sub2" id="kwMapFile">—</div>
+    <div class="mrow"><label>工作表</label><select id="kwMapSheet"></select></div>
+    <div class="mrow"><label>表头所在行</label><input id="kwMapRow" type="number" min="1" step="1" value="1"></div>
+    <div class="mrow"><label>关键词列</label><select id="kwMapKw"></select></div>
+    <div class="mrow"><label>搜索量列</label><select id="kwMapVol"></select></div>
+    <div class="mrow"><label>该列单位</label><select id="kwMapUnit"><option value="month">月搜索量</option><option value="week">周搜索量（×4.33 折算）</option></select></div>
+    <div class="acts">
+      <button class="btn" id="kwMapCancel">取消这个文件</button>
+      <button class="btn" id="kwMapOk">就用这些列</button>
+    </div>
   </div>
 </div>
 
@@ -415,9 +456,14 @@ function bindKwBoxes(){
       const r=S.groups[gi].rows[ri];
       const oldSvs=r.kws.map(k=>k.sv);
       const items=parseKws(e.target.value);
-      r.kws=items.map((it,i)=>({kw:it.kw, sv: it.sv!==null ? it.sv : (oldSvs[i] ?? 0)}));
+      r.kws=items.map((it,i)=>{
+        let sv = it.sv!==null ? it.sv : null;
+        if(sv===null) sv = libLookup(it.kw);
+        if(sv===null) sv = (oldSvs[i] ?? 0);
+        return {kw:it.kw, sv};
+      });
       const svBox=document.querySelector(`[data-svbox="${gi}_${ri}"]`);
-      if(svBox && e.target.value.includes('\t')) svBox.value = r.kws.map(k=>k.sv).join('\n');
+      if(svBox) svBox.value = r.kws.map(k=>k.sv).join('\n');
       schedule();
     });
   });
@@ -496,8 +542,11 @@ function calc(){
         const kc=$('kwc'+gi+'_'+ri); if(kc) kc.textContent=(r.kws||[]).length+' 个词';
         if(ks) ks.textContent=svw(c.sv);
         if(wn){
-          const nk=(r.kws||[]).filter(k=>k.kw.trim()).length, ns=(r.kws||[]).filter(k=>(+k.sv||0)>0).length;
-          wn.innerHTML = (nk!==ns) ? `<span class="lim">⚠ 有 ${Math.max(nk,ns)-Math.min(nk,ns)} 行词/搜索量没对上，请检查两列行数</span>` : '';
+          const withKw=(r.kws||[]).filter(k=>String(k.kw||'').trim());
+          const noSv=withKw.filter(k=>!(+k.sv>0)).length;
+          wn.innerHTML = noSv
+            ? `<span class="lim">⚠ ${noSv} 个词没有搜索量，该活动的点击上限会被低估${libActive()?'　可点上方「用词库补全搜索量」':''}</span>`
+            : '';
         }
         $('st'+gi+'_'+ri).innerHTML = c.limited
           ? `<span class="lim" title="搜索量只能撑 ${c.capClicks.toFixed(1)} 次点击">搜索量受限</span>`
@@ -644,16 +693,18 @@ $('resetDefault').addEventListener('click',()=>{
 });
 
 /* ============ 导出 / 导入（换电脑搬案例） ============ */
-const APP_ID='adstruct', APP_VER='5.1';
+const APP_ID='adstruct', APP_VER='6';
 const pad2=n=>String(n).padStart(2,'0');
 const stampNow=()=>{ const d=new Date();
   return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate())+'-'+pad2(d.getHours())+pad2(d.getMinutes()); };
 
 function exportPayload(){
+  const a=libActive();
   return {
     app:APP_ID, version:APP_VER, exportedAt:new Date().toISOString(),
     cases:loadCases(),
-    current:JSON.parse(JSON.stringify(S))
+    current:JSON.parse(JSON.stringify(S)),
+    kwlib: a ? {label:a.label, src:a.src, unit:a.unit, importedAt:a.importedAt, items:a.items} : null
   };
 }
 
@@ -710,11 +761,18 @@ function applyImport(obj){
       msg+='已同时载入文件里的当前表格。';
     }
   }
+  if(obj && obj.kwlib && obj.kwlib.items && Object.keys(obj.kwlib.items).length){
+    const kid='ds'+Date.now().toString(36);
+    LIB.sets[kid]={id:kid, label:(obj.kwlib.label||'导入的词库'), src:(obj.kwlib.src||'导入'),
+      unit:(obj.kwlib.unit||'month'), importedAt:(obj.kwlib.importedAt||new Date().toLocaleString('zh-CN')),
+      count:Object.keys(obj.kwlib.items).length, items:obj.kwlib.items};
+    LIB.active=kid; libSave(); libRender();
+    msg+=` 另外恢复了词库（${LIB.sets[kid].count} 个词）。`;
+  }
   $('caseHint').textContent=msg;
 }
 
-$('importFile').addEventListener('change',e=>{
-  const f=e.target.files && e.target.files[0];
+$('importFile').addEventListener('change',e=>{  const f=e.target.files && e.target.files[0];
   if(!f) return;
   const rd=new FileReader();
   rd.onload=()=>{
@@ -754,6 +812,326 @@ $('orgRate').addEventListener('input', e=>{ S.orgRate=parseFloat(e.target.value)
     S[id]=parseFloat(e.target.value)||0; schedule();
   });
 });
+
+/* ================= 关键词库：xlsx / csv 解析 + 搜索量自动补全 ================= */
+const LS_KWLIB='adstruct_kwlib_v1', W2M=52/12;
+let LIB=libLoad();
+
+function xlU16(u8,o){ return u8[o] | (u8[o+1]<<8); }
+function xlU32(u8,o){ return (u8[o] | (u8[o+1]<<8) | (u8[o+2]<<16) | (u8[o+3]<<24))>>>0; }
+
+function xlFindEocd(u8){
+  const min=Math.max(0,u8.length-22-65535);
+  for(let i=u8.length-22;i>=min;i--){
+    if(u8[i]===0x50&&u8[i+1]===0x4b&&u8[i+2]===0x05&&u8[i+3]===0x06) return i;
+  }
+  return -1;
+}
+
+async function xlInflateRaw(bytes){
+  const ds=new DecompressionStream('deflate-raw');
+  const stream=new Blob([bytes]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function xlUnzip(u8){
+  const eocd=xlFindEocd(u8);
+  if(eocd<0) throw new Error('不是有效的 xlsx（找不到 zip 结构）');
+  const td=new TextDecoder('utf-8');
+  const count=xlU16(u8,eocd+10);
+  let off=xlU32(u8,eocd+16);
+  const meta=new Map();
+  for(let i=0;i<count;i++){
+    if(xlU32(u8,off)!==0x02014b50) break;
+    const method=xlU16(u8,off+10), compSize=xlU32(u8,off+20);
+    const nameLen=xlU16(u8,off+28), extraLen=xlU16(u8,off+30), commentLen=xlU16(u8,off+32);
+    const localOff=xlU32(u8,off+42);
+    const name=td.decode(u8.subarray(off+46,off+46+nameLen));
+    meta.set(name,{method,compSize,localOff});
+    off+=46+nameLen+extraLen+commentLen;
+  }
+  const out=new Map();
+  for(const [name,m] of meta){
+    const lh=m.localOff;
+    if(xlU32(u8,lh)!==0x04034b50) continue;
+    const nl=xlU16(u8,lh+26), el=xlU16(u8,lh+28);
+    const start=lh+30+nl+el;
+    const raw=u8.subarray(start,start+m.compSize);
+    out.set(name, m.method===0 ? raw : await xlInflateRaw(raw));
+  }
+  return out;
+}
+
+function xlDecode(s){
+  return String(s).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'")
+    .replace(/&#x([0-9a-fA-F]+);/g,(m,h)=>String.fromCodePoint(parseInt(h,16)))
+    .replace(/&#(\d+);/g,(m,d)=>String.fromCodePoint(parseInt(d,10)))
+    .replace(/&amp;/g,'&');
+}
+
+function xlColIdx(ref){
+  const m=/^([A-Z]+)/.exec(ref||'');
+  if(!m) return -1;
+  let n=0; for(const c of m[1]) n=n*26+(c.charCodeAt(0)-64);
+  return n-1;
+}
+
+function xlColName(i){
+  let s='', n=i+1;
+  while(n>0){ const r=(n-1)%26; s=String.fromCharCode(65+r)+s; n=Math.floor((n-1)/26); }
+  return s;
+}
+
+function xlParseShared(xml){
+  const out=[], re=/<si\b[^>]*>([\s\S]*?)<\/si>/g;
+  let m;
+  while((m=re.exec(xml))){
+    const ts=[...m[1].matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(x=>xlDecode(x[1]));
+    out.push(ts.join(''));
+  }
+  return out;
+}
+
+function xlParseSheet(xml, shared){
+  const rows=[], rowRe=/<row\b([^>]*)>([\s\S]*?)<\/row>/g;
+  let rm;
+  while((rm=rowRe.exec(xml))){
+    const rnum=/r="(\d+)"/.exec(rm[1]);
+    const cells=[];
+    const cellRe=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+    let cm;
+    while((cm=cellRe.exec(rm[2]))){
+      const a=cm[1], inner=cm[2]||'';
+      const ref=/r="([A-Z]+\d+)"/.exec(a), type=/t="([^"]+)"/.exec(a);
+      let val=null;
+      if(type && type[1]==='inlineStr'){
+        const ts=[...inner.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map(x=>xlDecode(x[1]));
+        val=ts.join('');
+      } else {
+        const v=/<v\b[^>]*>([\s\S]*?)<\/v>/.exec(inner);
+        if(v){
+          const raw=xlDecode(v[1]);
+          if(type && type[1]==='s') val=shared[+raw] ?? '';
+          else if(type && (type[1]==='str'||type[1]==='e')) val=raw;
+          else { const n=Number(raw); val=Number.isFinite(n)?n:raw; }
+        }
+      }
+      const ci=ref?xlColIdx(ref[1]):cells.length;
+      if(val!==null && val!=='') cells[ci]=val;
+    }
+    rows[(rnum?+rnum[1]:rows.length+1)-1]=cells;
+  }
+  return rows.map(r=>r||[]);
+}
+
+async function xlReadSheets(buf){
+  const files=await xlUnzip(buf);
+  const td=new TextDecoder('utf-8');
+  const wbXml=files.get('xl/workbook.xml'), relXml=files.get('xl/_rels/workbook.xml.rels');
+  const shared=files.has('xl/sharedStrings.xml')?xlParseShared(td.decode(files.get('xl/sharedStrings.xml'))):[];
+  const relMap={};
+  if(relXml){
+    for(const m of td.decode(relXml).matchAll(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g)){
+      relMap[m[1]]=m[2].replace(/^\/?xl\//,'').replace(/^\//,'');
+    }
+  }
+  const sheets=[];
+  if(wbXml){
+    for(const m of td.decode(wbXml).matchAll(/<sheet\b[^>]*name="([^"]*)"[^>]*r:id="([^"]+)"/g)){
+      const target=relMap[m[2]]||'';
+      const body=files.get('xl/'+target.replace(/^\.\//,'')) || files.get('xl/worksheets/'+m[2]+'.xml');
+      if(body) sheets.push({name:xlDecode(m[1]), rows:xlParseSheet(td.decode(body),shared)});
+    }
+  }
+  if(!sheets.length){
+    for(const [name,body] of files){
+      if(/^xl\/worksheets\/sheet\d+\.xml$/.test(name)) sheets.push({name:name.split('/').pop(), rows:xlParseSheet(td.decode(body),shared)});
+    }
+  }
+  if(!sheets.length) throw new Error('xlsx 里没有工作表');
+  return sheets;
+}
+
+function xlParseCsv(text){
+  const clean=String(text).replace(/^\uFEFF/,'');
+  const lines=clean.split(/\r?\n/).filter(l=>l.length);
+  if(!lines.length) return [];
+  const first=lines[0];
+  const delim=(first.split('\t').length>first.split(',').length)?'\t':',';
+  return lines.map(line=>{
+    const out=[]; let cur='', q=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(q){
+        if(ch==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; }
+        else cur+=ch;
+      } else if(ch==='"'){ q=true; }
+      else if(ch===delim){ out.push(cur); cur=''; }
+      else cur+=ch;
+    }
+    out.push(cur);
+    return out.map(s=>s.trim());
+  });
+}
+
+const KW_HEAD=/关键词|流量词|搜索词|searchterm|query|keyword/i;
+const VOL_HEAD=/搜索量|搜索次数|searchvolume/i;
+const VOL_WEAK=/月搜索|周搜索|搜索/;
+const BAD_HEAD=/排名|rank|占比|份额|指数|竞争|难度|竞价|cpc|曝光|得分|频次/i;
+
+function kwNormHeader(s){ return String(s==null?'':s).replace(/\s+/g,'').replace(/[（）()【】\[\]]/g,'').toLowerCase(); }
+function kwNorm(k){ return String(k==null?'':k).replace(/[\u200b\ufeff\ufffc]/g,'').replace(/\s+/g,' ').trim().toLowerCase(); }
+function kwVol(v){
+  if(typeof v==='number') return v>0?v:0;
+  const n=parseFloat(String(v).replace(/[,\s$%]/g,''));
+  return isFinite(n)&&n>0?n:0;
+}
+
+function kwDetect(sheets){
+  let best=null;
+  for(const sh of sheets){
+    for(let hi=0;hi<Math.min(6,sh.rows.length);hi++){
+      const hdr=(sh.rows[hi]||[]).map(kwNormHeader);
+      if(!hdr.length) continue;
+      const kwCol=hdr.findIndex(h=>KW_HEAD.test(h)&&!BAD_HEAD.test(h));
+      if(kwCol<0) continue;
+      let volCol=hdr.findIndex(h=>VOL_HEAD.test(h)&&!BAD_HEAD.test(h));
+      if(volCol<0) volCol=hdr.findIndex(h=>VOL_WEAK.test(h)&&!BAD_HEAD.test(h));
+      if(volCol<0) continue;
+      const dataRows=sh.rows.slice(hi+1).filter(r=>r && r[kwCol]!=null && String(r[kwCol]).trim() && kwVol(r[volCol])>0);
+      if(!dataRows.length) continue;
+      const h=String(sh.rows[hi][volCol]||'');
+      const unit=/周/.test(h)?'week':(/月/.test(h)?'month':'unknown');
+      const joined=(sh.rows[hi]||[]).join(' ');
+      const src=/西柚/.test(joined)?'西柚':(/流量词|SPR|标题密度/.test(joined)?'卖家精灵':'未知');
+      if(!best || dataRows.length>best.dataRows.length){
+        best={sheet:sh.name, headerIdx:hi, kwCol, volCol, unit, src, header:h, dataRows};
+      }
+    }
+  }
+  return best;
+}
+
+function libLoad(){
+  try{ const o=JSON.parse(localStorage.getItem(LS_KWLIB)||'null'); if(o&&o.sets) return o; }catch(e){}
+  return {active:'', sets:{}};
+}
+function libSave(){
+  try{ localStorage.setItem(LS_KWLIB, JSON.stringify(LIB)); return true; }catch(e){ return false; }
+}
+function libActive(){ return (LIB.active && LIB.sets[LIB.active]) || null; }
+function libLookup(kw){
+  const s=libActive(); if(!s) return null;
+  const v=s.items[kwNorm(kw)];
+  return v>0?v:null;
+}
+function libRender(){
+  const sel=$('kwLibSel'); if(!sel) return;
+  const ids=Object.keys(LIB.sets);
+  sel.innerHTML='<option value="">— 未导入词库 —</option>'+
+    ids.map(id=>{const s=LIB.sets[id];return `<option value="${id}" ${id===LIB.active?'selected':''}>${s.label}（${s.count} 词）</option>`;}).join('');
+  const a=libActive();
+  $('kwHint').innerHTML = a
+    ? `当前词库：<b>${a.label}</b>，${a.count} 个词，导入于 ${a.importedAt}。关键词框里粘词后会自动补月搜索量（只补空白格，手填优先）。`
+    : '支持西柚（父体分析 / 以词找词）、卖家精灵（ReverseASIN / asinKeywords）等导出：自动识别关键词列与搜索量列，周搜索量按 ×4.33 折算成月。词库只存本机，<b>不联网</b>；识别不出来时会弹面板让你手动指定列。';
+}
+function kwFillAll(silent){
+  const a=libActive();
+  if(!a){ if(!silent) alert('还没有导入词库，先点「导入搜索量表格」'); return {filled:0,miss:0}; }
+  let filled=0, miss=0;
+  S.groups.forEach(g=>g.rows.forEach(r=>(r.kws||[]).forEach(k=>{
+    if(k.sv>0) return;
+    const v=libLookup(k.kw);
+    if(v){ k.sv=v; filled++; } else miss++;
+  })));
+  if(filled) build();
+  if(!silent) $('caseHint').textContent=`已用词库补全 ${filled} 个词的搜索量${miss?`，仍有 ${miss} 个词缺数据`:''}。`;
+  return {filled, miss};
+}
+
+function kwManualMap(sheets, fname){
+  return new Promise(resolve=>{
+    const ov=$('kwMap'), shSel=$('kwMapSheet'), rowIn=$('kwMapRow'),
+          kwSel=$('kwMapKw'), volSel=$('kwMapVol'), unitSel=$('kwMapUnit');
+    $('kwMapFile').textContent=fname;
+    shSel.innerHTML=sheets.map((s,i)=>`<option value="${i}">${s.name}（${s.rows.length} 行）</option>`).join('');
+    const fill=()=>{
+      const sh=sheets[+shSel.value]||sheets[0];
+      const hr=Math.min(Math.max(1,+rowIn.value||1),Math.max(1,sh.rows.length))-1;
+      const hdr=sh.rows[hr]||[];
+      const n=Math.max(hdr.length,1);
+      let opts='';
+      for(let i=0;i<n;i++) opts+=`<option value="${i}">${xlColName(i)}：${(String(hdr[i]==null?'':hdr[i]).replace(/\s+/g,' ').slice(0,26)||'（空）')}</option>`;
+      kwSel.innerHTML=opts; volSel.innerHTML=opts;
+      const guess=kwDetect([{name:sh.name, rows:sh.rows}]);
+      if(guess){ kwSel.value=String(guess.kwCol); volSel.value=String(guess.volCol); unitSel.value=guess.unit==='week'?'week':'month'; }
+      else { kwSel.value='0'; volSel.value=String(Math.min(1,n-1)); }
+    };
+    shSel.onchange=fill; rowIn.oninput=fill; fill();
+    const close=(val)=>{ ov.classList.remove('on'); resolve(val); };
+    $('kwMapOk').onclick=()=>{
+      const sh=sheets[+shSel.value]||sheets[0];
+      const hr=Math.min(Math.max(1,+rowIn.value||1),Math.max(1,sh.rows.length))-1;
+      const kwCol=+kwSel.value, volCol=+volSel.value, unit=unitSel.value;
+      const dataRows=sh.rows.slice(hr+1).filter(r=>r && r[kwCol]!=null && String(r[kwCol]).trim() && kwVol(r[volCol])>0);
+      if(!dataRows.length){ alert('这几列里没有有效数据，换个列试试'); return; }
+      close({sheet:sh.name, headerIdx:hr, kwCol, volCol, unit, src:'手动指定', header:'', dataRows});
+    };
+    $('kwMapCancel').onclick=()=>close(null);
+    ov.classList.add('on');
+  });
+}
+
+async function kwImportFiles(files){
+  if(!files||!files.length) return;
+  const items={}, sources=[]; let rows=0, filesOk=0;
+  for(const f of files){
+    let sheets=null;
+    try{
+      if(/\.(csv|tsv|txt)$/i.test(f.name)) sheets=[{name:f.name, rows:xlParseCsv(await f.text())}];
+      else sheets=await xlReadSheets(new Uint8Array(await f.arrayBuffer()));
+    }catch(err){ alert(`「${f.name}」读不出来：${err.message}`); continue; }
+    let det=kwDetect(sheets);
+    if(!det){
+      det=await kwManualMap(sheets, f.name);
+      if(!det) continue;
+    }
+    filesOk++;
+    const mul=det.unit==='week'?W2M:1;
+    det.dataRows.forEach(r=>{
+      const kw=kwNorm(r[det.kwCol]);
+      const v=kwVol(r[det.volCol]);
+      if(!kw||!v) return;
+      items[kw]=Math.max(items[kw]||0, Math.round(v*mul));
+      rows++;
+    });
+    if(det.src && det.src!=='未知' && sources.indexOf(det.src)<0) sources.push(det.src);
+  }
+  const count=Object.keys(items).length;
+  if(!count){ $('kwHint').textContent='这次没有导入到「关键词 + 搜索量」（可能选中的表里没有这两列）。'; return; }
+  const id='ds'+Date.now().toString(36);
+  LIB.sets[id]={id, label:`${sources.length?sources.join('+'):'表格'} · ${filesOk} 个文件 · ${filesOk===1?files[0].name.replace(/\.(xlsx|csv|tsv|txt)$/i,''):'合并'}`, src:sources.join('+')||'表格', unit:'month', importedAt:new Date().toLocaleString('zh-CN'), count, items};
+  LIB.active=id;
+  const ids=Object.keys(LIB.sets);
+  if(ids.length>6) ids.slice(0,ids.length-6).forEach(k=>{ if(k!==id) delete LIB.sets[k]; });
+  if(!libSave()) alert('词库太大，浏览器存不下：本次可用，但刷新后会丢。建议一次只导入需要的表。');
+  libRender();
+  const res=kwFillAll(true);
+  $('kwHint').innerHTML=`已导入 <b>${count}</b> 个词（${filesOk} 个文件，${rows} 行有效），自动补全 <b>${res.filled}</b> 个词的搜索量${res.miss?`，还有 ${res.miss} 个词没数据`:''}。周数据已按 ×4.33 折算成月。`;
+}
+
+$('kwImport').addEventListener('click',()=>$('kwFiles').click());
+$('kwFiles').addEventListener('change',async e=>{ const fs=[...e.target.files]; e.target.value=''; await kwImportFiles(fs); });
+$('kwLibSel').addEventListener('change',e=>{ LIB.active=e.target.value; libSave(); libRender(); kwFillAll(true); });
+$('kwFill').addEventListener('click',()=>kwFillAll(false));
+$('kwDel').addEventListener('click',()=>{
+  const a=libActive(); if(!a){ alert('先在下拉里选一个词库'); return; }
+  if(!confirm(`删除词库「${a.label}」？（只删本机这份，不影响你的表格）`)) return;
+  delete LIB.sets[a.id];
+  LIB.active=Object.keys(LIB.sets)[0]||'';
+  libSave(); libRender();
+});
+libRender();
 
 refreshCases(); syncInputs(); build();
 </script>
