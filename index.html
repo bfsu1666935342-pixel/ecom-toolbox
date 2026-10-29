@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>广告结构反推测算</title>
+<style>
+  :root{--bg:#0f1216;--card:#171b21;--card2:#1e242c;--line:#2b333d;--txt:#e8edf3;
+        --dim:#8b97a6;--green:#31c48d;--red:#f05252;--amber:#f0a93b;--blue:#4c9aff}
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px 16px 70px;background:var(--bg);color:var(--txt);
+    font:14px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif}
+  .wrap{max-width:1240px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px;font-weight:650;display:inline-block}
+  .ver{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;
+    background:#16351f;color:var(--green);font-size:11px;vertical-align:middle}
+  .sub{color:var(--dim);font-size:12px;margin:4px 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;margin-bottom:14px}
+  .card h2{font-size:13px;margin:0 0 12px;color:var(--dim);font-weight:600;letter-spacing:.4px}
+  .grid{display:grid;gap:10px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:860px){.g4{grid-template-columns:repeat(2,1fr)}}
+  label{display:block;font-size:11px;color:var(--dim);margin-bottom:4px}
+  input,select{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:7px;
+    color:var(--txt);padding:7px 8px;font-size:14px;font-variant-numeric:tabular-nums}
+  input:focus,select:focus{outline:none;border-color:var(--blue)}
+  .uw{position:relative}
+  .uw .suf{position:absolute;right:8px;top:7px;color:var(--dim);font-size:12px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th{font-size:11px;color:var(--dim);font-weight:600;text-align:right;padding:0 5px 7px;
+    border-bottom:1px solid var(--line);white-space:nowrap}
+  th.l{text-align:left}
+  td{padding:5px;border-bottom:1px solid #20262e;text-align:right;font-size:13px}
+  td.l{text-align:left}
+  td input,td select{padding:5px 6px;font-size:13px;text-align:right}
+  td input.name{text-align:left}
+  tr.grp{background:#1a1f26}
+  tr.grp td{border-bottom:1px solid #2b333d}
+  tr.grp td.first{text-align:left;font-weight:600}
+  tr.act{background:#161a20}
+  tr.kw{background:#14181d;font-size:12px}
+  tr.kw td{color:#b9c4d0;border-bottom:1px dashed #232a32;padding:3px 5px}
+  .caret{background:none;border:none;color:var(--dim);cursor:pointer;font-size:12px;padding:0 3px}
+  .caret:hover{color:var(--blue)}
+  .del{background:none;border:none;color:#5b6675;cursor:pointer;font-size:15px;padding:0 3px}
+  .del:hover{color:var(--red)}
+  .addc{background:none;border:1px dashed #3a444f;color:var(--dim);cursor:pointer;
+    border-radius:6px;font-size:11px;padding:1px 6px;margin-left:4px}
+  .addc:hover{color:var(--blue);border-color:var(--blue)}
+  .lim{color:var(--amber);font-size:11px}
+  .ok{color:var(--green);font-size:11px}
+  .bad{color:var(--red)} .good{color:var(--green)} .warn{color:var(--amber)}
+  .btn{background:var(--card2);border:1px solid var(--line);color:var(--txt);
+    border-radius:7px;padding:7px 12px;font-size:13px;cursor:pointer}
+  .btn:hover{border-color:var(--blue)}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+  @media(max-width:860px){.sum{grid-template-columns:repeat(2,1fr)}}
+  .kv{background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:11px}
+  .kv .k{font-size:11px;color:var(--dim);margin-bottom:4px}
+  .kv .v{font-size:18px;font-weight:650;font-variant-numeric:tabular-nums}
+  .kv .n{font-size:11px;color:var(--dim);margin-top:3px}
+  .verdict{margin-top:12px;padding:13px 15px;border-radius:9px;font-size:14px;
+    border:1px solid var(--line);background:var(--card2)}
+  .hint{color:var(--dim);font-size:11px;margin-top:8px;line-height:1.65}
+  .wc{color:var(--dim);font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>广告结构反推测算<span class="ver">v3.1</span></h1>
+  <div class="sub">三层结构：层级 → 广告活动 → 关键词。关键词一行一个、粘在一个框里；搜索量单独一列按行对应。活动的搜索量 = 该活动所有关键词搜索量之和（短语/广泛按精准词的搜索量计，不折算）。</div>
+
+  <div class="card">
+    <h2>案例管理</h2>
+    <div class="bar">
+      <select id="presetSel" style="max-width:280px"><option value="">— 载入已保存案例 —</option></select>
+      <button class="btn" id="saveCase">保存当前为案例</button>
+      <button class="btn" id="delCase">删除选中案例</button>
+      <button class="btn" id="resetDefault">恢复初始模板</button>
+    </div>
+    <div class="hint" id="caseHint">改动自动存本机（换浏览器/清缓存会丢），重要组合请点「保存当前为案例」。</div>
+  </div>
+
+  <div class="card">
+    <h2>利润基准（毛利口径）</h2>
+    <div class="grid g4">
+      <div><label>售价 $</label><div class="uw"><input id="price" type="number" step="0.01" value="129.99"><span class="suf">$</span></div></div>
+      <div><label>单件毛利 $（除广告外含所有成本）</label><div class="uw"><input id="margin" type="number" step="0.01" value="25.03"><span class="suf">$</span></div></div>
+      <div><label>目标日销（单/天）</label><input id="target" type="number" step="1" value="10"></div>
+      <div><label>ACoAS 目标（参考）</label><div class="uw"><input id="acoas" type="number" step="0.5" value="10"><span class="suf">%</span></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>广告结构（点 ▸ 展开活动下的关键词）</h2>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th class="l" style="min-width:210px">层级 / 广告活动 / 关键词</th>
+            <th style="width:86px">匹配方式</th>
+            <th style="width:96px">月搜索量</th>
+            <th style="width:72px">点击率 %</th>
+            <th style="width:86px">日预算 $</th>
+            <th style="width:74px">CPC $</th>
+            <th style="width:76px">转化率 %</th>
+            <th style="width:74px">点击/天</th>
+            <th style="width:66px">单/天</th>
+            <th style="width:76px">CPA</th>
+            <th style="width:80px">状态</th>
+            <th style="width:30px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="bar" style="margin-top:10px">
+      <button class="btn" id="addGroup">+ 加一个层级</button>
+    </div>
+    <div class="hint">
+      计算：可拿到的点击上限 = <b>活动搜索量 ÷ 30 × 点击率</b>；预算能买 = 日预算 ÷ CPC；两者取小，超出标「搜索量受限」。<br>
+      搜索量填单个关键词的月搜索量（数据源可用 SIF / 领星）。短语、广泛匹配不改搜索量，按同词的精准搜索量计。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>汇总与对比</h2>
+    <div class="sum">
+      <div class="kv"><div class="k">广告实花 / 天</div><div class="v" id="sSpend">—</div><div class="n" id="sSpendN">—</div></div>
+      <div class="kv"><div class="k">预计单量 / 天</div><div class="v" id="sOrders">—</div><div class="n" id="sOrdersN">—</div></div>
+      <div class="kv"><div class="k">综合 CPA</div><div class="v" id="sCpa">—</div><div class="n" id="sCpaN">—</div></div>
+      <div class="kv"><div class="k">平本花费 / 天</div><div class="v" id="sBreak">—</div><div class="n" id="sBreakN">—</div></div>
+      <div class="kv"><div class="k">平本 ACoAS</div><div class="v" id="sBreakAcoas">—</div><div class="n" id="sBreakAcoasN">—</div></div>
+      <div class="kv"><div class="k">差额（平本 − 实花）</div><div class="v" id="sGap">—</div><div class="n" id="sGapN">—</div></div>
+      <div class="kv"><div class="k">差额 %</div><div class="v" id="sGapP">—</div><div class="n">正=有余量 / 负=超支</div></div>
+      <div class="kv"><div class="k">实际 ACoAS</div><div class="v" id="sAcoas">—</div><div class="n" id="sAcoasN">—</div></div>
+      <div class="kv"><div class="k">实际利润率</div><div class="v" id="sProfit">—</div><div class="n" id="sProfitN">—</div></div>
+    </div>
+    <div class="verdict" id="verdict">—</div>
+    <div class="hint">平本 ACoAS = 单件毛利 ÷ 售价（利润为 0 时广告费占销售额的上限）；平本花费 = 单件毛利 × 目标日销（利润为 0 时每天最多能花的广告费）。单量为线性外推，未考虑竞价被抬高。</div>
+  </div>
+</div>
+
+<script>
+const MATCH = ['精准','短语','广泛','自动','ASIN 投放','类目投放','品牌广告'];
+const TEMPLATE = {
+  price:129.99, margin:25.03, target:10, acoas:10,
+  groups:[
+    {name:'T1 大词', open:true, rows:[
+      {name:'SP-精准-gaming chair', match:'精准', ctr:0.50, budget:8, cpc:1.38, cvr:4.5, open:false,
+       kws:[{kw:'gaming chair', sv:302000}]},
+      {name:'SP-短语-gaming chair', match:'短语', ctr:0.30, budget:7, cpc:1.20, cvr:4.0, open:false,
+       kws:[{kw:'gaming chair', sv:302000}, {kw:'gaming chairs', sv:61800}]},
+      {name:'SP-自动-紧密', match:'自动', ctr:0.15, budget:5, cpc:1.00, cvr:3.0, open:false,
+       kws:[{kw:'gaming chair', sv:302000}, {kw:'gamer chair', sv:80000}]}
+    ]},
+    {name:'T2 中词', open:true, rows:[
+      {name:'SP-短语-silla gamer', match:'短语', ctr:0.60, budget:25, cpc:0.95, cvr:4.5, open:false,
+       kws:[{kw:'silla gamer', sv:21656}, {kw:'sillas gamer', sv:8200}]},
+      {name:'SP-精准-pink gaming chair', match:'精准', ctr:0.55, budget:20, cpc:0.90, cvr:4.5, open:false,
+       kws:[{kw:'pink gaming chair', sv:9747}]},
+      {name:'SP-短语-ergonomic', match:'短语', ctr:0.50, budget:15, cpc:0.85, cvr:4.0, open:false,
+       kws:[{kw:'ergonomic gaming chair', sv:5787}]}
+    ]},
+    {name:'T3 小词', open:false, rows:[
+      {name:'SP-短语-脚托词簇', match:'短语', ctr:0.40, budget:40, cpc:0.85, cvr:4.5, open:false,
+       kws:[{kw:'gaming chair with footrest', sv:16442}, {kw:'office chair with footrest', sv:9000}, {kw:'reclining gaming chair', sv:6000}]},
+      {name:'SP-短语-面料词簇', match:'短语', ctr:0.35, budget:30, cpc:0.80, cvr:4.5, open:false,
+       kws:[{kw:'fabric gaming chair', sv:11912}, {kw:'breathable gaming chair', sv:5000}, {kw:'mesh gaming chair', sv:4000}]}
+    ]},
+    {name:'T4 长尾', open:false, rows:[
+      {name:'SP-广泛-长尾合集', match:'广泛', ctr:0.25, budget:30, cpc:0.70, cvr:5.0, open:false,
+       kws:[{kw:'comfy chair', sv:16762}, {kw:'big and tall gaming chair', sv:3999}, {kw:'gaming chair for heavy person', sv:2500}]}
+    ]}
+  ]
+};
+const LS_LAST='adstruct_last_v3', LS_CASES='adstruct_cases_v3';
+let S = normalize(loadLast() || JSON.parse(JSON.stringify(TEMPLATE)));
+
+function normalize(state){
+  (state.groups||[]).forEach(g=>{
+    g.rows = g.rows || [];
+    g.rows.forEach(r=>{
+      if(!Array.isArray(r.kws)) r.kws = (r.sv!==undefined) ? [{kw:r.name, sv:r.sv}] : [];
+      if(r.open===undefined) r.open = false;
+    });
+  });
+  return state;
+}
+function loadLast(){ try{ const t=localStorage.getItem(LS_LAST); return t?JSON.parse(t):null }catch(e){ return null } }
+function saveLast(){ try{ localStorage.setItem(LS_LAST, JSON.stringify(S)) }catch(e){} }
+function loadCases(){ try{ return JSON.parse(localStorage.getItem(LS_CASES)||'[]') }catch(e){ return [] } }
+function saveCases(a){ try{ localStorage.setItem(LS_CASES, JSON.stringify(a)) }catch(e){} }
+
+const $ = id => document.getElementById(id);
+const money = v => '$' + (isFinite(v)?v.toFixed(2):'0.00');
+const num = v => isFinite(v)?Math.round(v).toLocaleString('en-US'):'0';
+const svw = v => v>=10000 ? (v/10000).toFixed(1)+'万' : num(v);
+
+// 活动搜索量 = 该活动所有关键词搜索量之和（短语/广泛不折算）
+function actSv(r){ return (r.kws||[]).reduce((a,k)=>a+(+k.sv||0),0); }
+
+function rowCalc(r){
+  const sv = actSv(r);
+  const capClicks = sv>0 ? (sv/30)*(r.ctr/100) : Infinity;
+  const buyClicks = r.cpc>0 ? r.budget/r.cpc : 0;
+  const clicks = Math.min(capClicks, buyClicks);
+  const limited = capClicks < buyClicks - 1e-9;
+  const orders = clicks*(r.cvr/100);
+  const spend = clicks*r.cpc;
+  const cpa = orders>0 ? spend/orders : 0;
+  return {sv, capClicks, buyClicks, clicks, orders, spend, cpa, limited};
+}
+
+function build(){
+  const tb = $('tbody'); tb.innerHTML = '';
+  S.groups.forEach((g,gi)=>{
+    const agg = g.rows.reduce((a,r)=>{const c=rowCalc(r);
+      a.clicks+=c.clicks; a.orders+=c.orders; a.spend+=c.spend; a.budget+=r.budget; a.sv+=c.sv;
+      return a;},{clicks:0,orders:0,spend:0,budget:0,sv:0});
+    const gCpa = agg.orders>0?agg.spend/agg.orders:0;
+
+    const trg=document.createElement('tr'); trg.className='grp';
+    trg.innerHTML=`
+      <td class="first">
+        <button class="caret" data-tg="${gi}">${g.open?'▼':'▶'}</button>
+        <input class="name" data-g="${gi}" data-f="gname" value="${g.name}" style="width:118px">
+        <button class="addc" data-add="${gi}">+ 活动</button>
+      </td>
+      <td></td>
+      <td id="gsv${gi}">${num(agg.sv)}</td>
+      <td>—</td><td id="gbud${gi}">${num(agg.budget)}</td><td>—</td><td>—</td>
+      <td id="gclk${gi}">${num(agg.clicks)}</td>
+      <td id="gord${gi}">${agg.orders.toFixed(2)}</td>
+      <td id="gcpa${gi}">${gCpa?money(gCpa):'—'}</td>
+      <td></td>
+      <td><button class="del" data-dg="${gi}" title="删除层级">×</button></td>`;
+    tb.appendChild(trg);
+
+    if(!g.open) return;
+
+    g.rows.forEach((r,ri)=>{
+      const c = rowCalc(r);
+      const tra=document.createElement('tr'); tra.className='act';
+      tra.innerHTML=`
+        <td class="l">
+          <button class="caret" data-ta="${gi}_${ri}">${r.open?'▼':'▶'}</button>
+          <input class="name" data-g="${gi}" data-r="${ri}" data-f="name" value="${r.name}" style="width:190px">
+          <button class="addc" data-addkw="${gi}_${ri}">+ 词</button>
+        </td>
+        <td><select data-g="${gi}" data-r="${ri}" data-f="match">${MATCH.map(m=>`<option ${m===r.match?'selected':''}>${m}</option>`).join('')}</select></td>
+        <td><span id="asv${gi}_${ri}">${svw(c.sv)}</span><div class="wc" id="kwc${gi}_${ri}">${(r.kws||[]).length} 个词</div></td>
+        <td><input type="number" step="0.05" data-g="${gi}" data-r="${ri}" data-f="ctr" value="${r.ctr}"></td>
+        <td><input type="number" step="1" data-g="${gi}" data-r="${ri}" data-f="budget" value="${r.budget}"></td>
+        <td><input type="number" step="0.01" data-g="${gi}" data-r="${ri}" data-f="cpc" value="${r.cpc}"></td>
+        <td><input type="number" step="0.5" data-g="${gi}" data-r="${ri}" data-f="cvr" value="${r.cvr}"></td>
+        <td id="clk${gi}_${ri}">—</td><td id="ord${gi}_${ri}">—</td><td id="cpa${gi}_${ri}">—</td>
+        <td id="st${gi}_${ri}">—</td>
+        <td><button class="del" data-dr="${gi}_${ri}" title="删除活动">×</button></td>`;
+      tb.appendChild(tra);
+
+      if(!r.open) return;
+      const kwText = (r.kws||[]).map(k=>k.kw).join('\n');
+      const svText = (r.kws||[]).map(k=>k.sv).join('\n');
+      const trk=document.createElement('tr'); trk.className='kw';
+      trk.innerHTML=`
+        <td colspan="12" style="padding:2px 6px 10px 24px">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="flex:1;min-width:240px">
+              <label>关键词（一行一个；直接从 Excel 粘两列也可以：词 + 搜索量，用 Tab 隔开）</label>
+              <textarea data-kwbox="${gi}_${ri}" rows="${Math.max(3, Math.min(10, (r.kws||[]).length+1))}"
+                style="width:100%;background:var(--card2);border:1px solid var(--line);border-radius:7px;
+                color:var(--txt);padding:7px 8px;font:12px/1.6 ui-monospace,Menlo,monospace;resize:vertical">${kwText}</textarea>
+            </div>
+            <div style="width:150px">
+              <label>月搜索量（一行一个，按行对应）</label>
+              <textarea data-svbox="${gi}_${ri}" rows="${Math.max(3, Math.min(10, (r.kws||[]).length+1))}"
+                style="width:100%;background:var(--card2);border:1px solid var(--line);border-radius:7px;
+                color:var(--txt);padding:7px 8px;font:12px/1.6 ui-monospace,Menlo,monospace;text-align:right;resize:vertical">${svText}</textarea>
+            </div>
+            <div style="width:104px;padding-top:18px">
+              <div class="wc">词数</div>
+              <div style="font-size:15px;font-weight:600" id="kwn${gi}_${ri}">${(r.kws||[]).length}</div>
+              <div class="wc" style="margin-top:4px">合计搜索量</div>
+              <div style="font-size:15px;font-weight:600" id="kws${gi}_${ri}">${svw((r.kws||[]).reduce((a,k)=>a+(+k.sv||0),0))}</div>
+            </div>
+          </div>
+          <div class="wc" id="warn${gi}_${ri}" style="margin-top:4px"></div>
+        </td>`;
+      tb.appendChild(trk);
+    });
+  });
+  bind();
+  calc();
+}
+
+function parseKws(txt){
+  return txt.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0).map(l=>{
+    const parts = l.split(/\t|,|，|\s{2,}/).filter(x=>x.trim().length>0);
+    if(parts.length>=2){
+      const numStr = parts[parts.length-1].replace(/[,，\s]/g,'');
+      if(/^[\d.]+$/.test(numStr) && numStr!==''){
+        return {kw: parts.slice(0,-1).join(' ').trim(), sv: parseFloat(numStr)||0};
+      }
+    }
+    return {kw:l, sv:null};
+  });
+}
+function parseSvs(txt){
+  return txt.split(/\r?\n/).map(x=>parseFloat(String(x).replace(/[,，\s$]/g,''))||0).filter((_,i,arr)=>i<arr.length);
+}
+function bindKwBoxes(){
+  const tb=$('tbody');
+  tb.querySelectorAll('[data-kwbox]').forEach(ta=>{
+    ta.addEventListener('input', e=>{
+      const [gi,ri]=e.target.dataset.kwbox.split('_').map(Number);
+      const r=S.groups[gi].rows[ri];
+      const oldSvs=r.kws.map(k=>k.sv);
+      const items=parseKws(e.target.value);
+      r.kws=items.map((it,i)=>({kw:it.kw, sv: it.sv!==null ? it.sv : (oldSvs[i] ?? 0)}));
+      const svBox=document.querySelector(`[data-svbox="${gi}_${ri}"]`);
+      if(svBox && e.target.value.includes('\t')) svBox.value = r.kws.map(k=>k.sv).join('\n');
+      schedule();
+    });
+  });
+  tb.querySelectorAll('[data-svbox]').forEach(ta=>{
+    ta.addEventListener('input', e=>{
+      const [gi,ri]=e.target.dataset.svbox.split('_').map(Number);
+      const r=S.groups[gi].rows[ri];
+      const svs=parseSvs(e.target.value);
+      const n=Math.max(r.kws.length, svs.length);
+      const next=[];
+      for(let i=0;i<n;i++) next.push({kw:(r.kws[i]?.kw)||'', sv: svs[i] ?? 0});
+      r.kws=next;
+      schedule();
+    });
+  });
+}
+
+function bind(){
+  bindKwBoxes();
+  const tb=$('tbody');
+  tb.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', e=>{
+      const t=e.target, gi=+t.dataset.g, ri=t.dataset.r!==undefined?+t.dataset.r:null,
+            ki=t.dataset.k!==undefined?+t.dataset.k:null, f=t.dataset.f;
+      if(f==='gname') S.groups[gi].name=t.value;
+      else if(ki!==null) S.groups[gi].rows[ri].kws[ki][f]= (f==='kw') ? t.value : (parseFloat(t.value)||0);
+      else S.groups[gi].rows[ri][f]= (f==='name'||f==='match') ? t.value : (parseFloat(t.value)||0);
+      schedule();
+    });
+  });
+  tb.querySelectorAll('[data-tg]').forEach(b=>b.addEventListener('click',e=>{
+    S.groups[+e.target.dataset.tg].open = !S.groups[+e.target.dataset.tg].open; build();}));
+  tb.querySelectorAll('[data-ta]').forEach(b=>b.addEventListener('click',e=>{
+    const [gi,ri]=e.target.dataset.ta.split('_').map(Number);
+    S.groups[gi].rows[ri].open = !S.groups[gi].rows[ri].open; build();}));
+  tb.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',e=>{
+    const gi=+e.target.dataset.add;
+    S.groups[gi].rows.push({name:'新活动', match:'精准', ctr:0.5, budget:10, cpc:0.9, cvr:4.5, open:true,
+      kws:[{kw:'新关键词', sv:5000}]});
+    S.groups[gi].open=true; build();}));
+  tb.querySelectorAll('[data-addkw]').forEach(b=>b.addEventListener('click',e=>{
+    const [gi,ri]=e.target.dataset.addkw.split('_').map(Number);
+    S.groups[gi].rows[ri].kws.push({kw:'新关键词', sv:1000});
+    S.groups[gi].rows[ri].open=true; build();}));
+  tb.querySelectorAll('[data-dg]').forEach(b=>b.addEventListener('click',e=>{
+    S.groups.splice(+e.target.dataset.dg,1); build();}));
+  tb.querySelectorAll('[data-dr]').forEach(b=>b.addEventListener('click',e=>{
+    const [gi,ri]=e.target.dataset.dr.split('_').map(Number);
+    S.groups[gi].rows.splice(ri,1); build();}));
+}
+
+let timer=null;
+function schedule(){ clearTimeout(timer); timer=setTimeout(calc,600); }
+
+function calc(){
+  const price=+$('price').value||0, marg=+$('margin').value||0;
+  const target=+$('target').value||0, acoas=(+$('acoas').value||0)/100;
+
+  let spend=0, orders=0, clicks=0, budget=0, svAll=0;
+  S.groups.forEach((g,gi)=>{
+    let gsp=0,gor=0,gcl=0,gbu=0,gsv=0;
+    g.rows.forEach((r,ri)=>{
+      const c=rowCalc(r);
+      gsp+=c.spend; gor+=c.orders; gcl+=c.clicks; gbu+=r.budget; gsv+=c.sv;
+      const el=$('clk'+gi+'_'+ri);
+      if(el){
+        el.textContent=num(c.clicks);
+        $('ord'+gi+'_'+ri).textContent=c.orders.toFixed(2);
+        $('cpa'+gi+'_'+ri).textContent=c.orders>0?money(c.cpa):'—';
+        $('asv'+gi+'_'+ri).textContent=svw(c.sv);
+        const kn=$('kwn'+gi+'_'+ri), ks=$('kws'+gi+'_'+ri), wn=$('warn'+gi+'_'+ri);
+        if(kn) kn.textContent=(r.kws||[]).length;
+        const kc=$('kwc'+gi+'_'+ri); if(kc) kc.textContent=(r.kws||[]).length+' 个词';
+        if(ks) ks.textContent=svw(c.sv);
+        if(wn){
+          const nk=(r.kws||[]).filter(k=>k.kw.trim()).length, ns=(r.kws||[]).filter(k=>(+k.sv||0)>0).length;
+          wn.innerHTML = (nk!==ns) ? `<span class="lim">⚠ 有 ${Math.max(nk,ns)-Math.min(nk,ns)} 行词/搜索量没对上，请检查两列行数</span>` : '';
+        }
+        $('st'+gi+'_'+ri).innerHTML = c.limited
+          ? `<span class="lim" title="搜索量只能撑 ${c.capClicks.toFixed(1)} 次点击">搜索量受限</span>`
+          : `<span class="ok">正常</span>`;
+      }
+    });
+    spend+=gsp; orders+=gor; clicks+=gcl; budget+=gbu; svAll+=gsv;
+    const set=(id,v)=>{const el=$(id); if(el) el.textContent=v;};
+    set('gsv'+gi,num(gsv)); set('gbud'+gi,num(gbu)); set('gclk'+gi,num(gcl));
+    set('gord'+gi,gor.toFixed(2)); set('gcpa'+gi,gor>0?money(gsp/gor):'—');
+  });
+
+  const cpa=orders>0?spend/orders:0;
+  const realAcoas=(price*orders)>0?spend/(price*orders)*100:0;
+  const revenue=price*orders;
+  const profit=marg*orders-spend;
+  const profitRate=revenue>0?profit/revenue*100:0;
+
+  const breakEven=marg*target;
+  const cap=breakEven;
+  const gap=cap-spend;
+  const gapP=cap>0?gap/cap*100:0;
+  const breakAcoasVal=price>0?marg/price*100:0;
+
+  $('sSpend').textContent=money(spend);
+  $('sSpendN').textContent=`预算合计 ${money(budget)}/天${budget-spend>0.5?`｜花不完 ${money(budget-spend)}`:''}｜月 ${money(spend*30)}`;
+  $('sOrders').textContent=orders.toFixed(1)+' 单';
+  $('sOrdersN').textContent=`月 ${num(orders*30)} 单｜目标 ${target}/天（达成 ${target>0?(orders/target*100).toFixed(1):'0.0'}%）`;
+  $('sCpa').textContent=cpa>0?money(cpa):'—';
+  $('sCpaN').textContent = cpa<=0?'—':(cpa>marg?`超过保本线（毛利 ${money(marg)}）`
+      :(cpa>marg*0.5?`在保本线内，吃掉 ${((cpa/marg)*100).toFixed(0)}% 毛利`:`健康（低于毛利一半）`));
+  $('sBreak').textContent=money(cap);
+  $('sBreakN').textContent=`毛利 ${money(marg)} × 目标 ${target} 单`;
+  $('sBreakAcoas').textContent=breakAcoasVal.toFixed(1)+'%';
+  $('sBreakAcoasN').textContent=`毛利 ${money(marg)} ÷ 售价 ${money(price)}`;
+
+  $('sGap').textContent=(gap>=0?'+':'−')+money(Math.abs(gap));
+  $('sGap').className='v '+(gap>=0?'good':'bad');
+  $('sGapN').textContent=gap>=0?'还有余量，没花到平本线':'超出平本线，这部分是亏的';
+  $('sGapP').textContent=(gapP>=0?'+':'')+gapP.toFixed(1)+'%';
+  $('sGapP').className='v '+(gapP>=0?'good':'bad');
+
+  $('sAcoas').textContent=realAcoas.toFixed(1)+'%';
+  $('sAcoas').className='v '+(realAcoas<=acoas*100?'good':(realAcoas<=acoas*150?'warn':'bad'));
+  $('sAcoasN').textContent=`目标 ${(acoas*100).toFixed(0)}%｜偏差 ${(realAcoas-acoas*100>=0?'+':'')}${(realAcoas-acoas*100).toFixed(1)}pt`;
+
+  $('sProfit').textContent=profitRate.toFixed(1)+'%';
+  $('sProfit').className='v '+(profitRate>=0?'good':'bad');
+  $('sProfitN').textContent=`日利润 ${money(profit)}｜单件毛利 ${money(marg)}`;
+
+  const gapOrders=target-orders;
+  const needMore=cpa>0?gapOrders*cpa:0;
+  $('verdict').innerHTML =
+    `按目标 ${target} 单/天算，平本花费 <b>${money(cap)}/天</b>，当前结构实花 <b>${money(spend)}/天</b> → `+
+    `<span class="${gap>=0?'good':'bad'}"><b>${gap>=0?'赚（有余量）':'亏（超支）'} ${Math.abs(gapP).toFixed(1)}%</b></span>`+
+    `（差额 ${money(Math.abs(gap))}/天，月 ${money(Math.abs(gap)*30)}）`+
+    `<br><span style="color:#8b97a6;font-size:13px">实际 ACoAS ${realAcoas.toFixed(1)}%｜${orders.toFixed(1)} 单/天｜综合 CPA ${money(cpa)}｜日利润 ${money(profit)}</span>`+
+    `<br><span style="color:${gapOrders>0?'#f0a93b':'#31c48d'};font-size:13px">目标 ${target} 单/天 vs 结构 ${orders.toFixed(1)} 单/天：`+
+    (gapOrders>0
+      ? `还差 ${gapOrders.toFixed(1)} 单/天，按当前 CPA 需再加 ${money(needMore)}/天预算（或提转化率，把 CPA 压到 ${money(cap/target)} 以内）`
+      : `已达成，富余 ${Math.abs(gapOrders).toFixed(1)} 单/天`)+`</span>`;
+
+  saveLast();
+}
+
+function refreshCases(){
+  const sel=$('presetSel'), cases=loadCases();
+  sel.innerHTML='<option value="">— 载入已保存案例 —</option>'+
+    cases.map((c,i)=>`<option value="${i}">${c.name}（${c.time}）</option>`).join('');
+}
+$('saveCase').addEventListener('click',()=>{
+  const name=prompt('案例名称（如：50F-10月方案）'); if(!name) return;
+  const cases=loadCases();
+  cases.push({name,time:new Date().toLocaleDateString('zh-CN'),data:JSON.parse(JSON.stringify(S))});
+  saveCases(cases); refreshCases(); $('caseHint').textContent=`已保存「${name}」，共 ${cases.length} 个案例。`;
+});
+$('delCase').addEventListener('click',()=>{
+  const i=$('presetSel').value; if(i===''){ alert('先在下拉里选中一个案例'); return; }
+  const cases=loadCases(), n=cases[i].name;
+  if(!confirm(`删除案例「${n}」？`)) return;
+  cases.splice(i,1); saveCases(cases); refreshCases(); $('caseHint').textContent=`已删除「${n}」。`;
+});
+$('presetSel').addEventListener('change',e=>{
+  const i=e.target.value; if(i==='') return;
+  const c=loadCases()[i]; if(!c) return;
+  S=normalize(JSON.parse(JSON.stringify(c.data)));
+  syncInputs(); build(); $('caseHint').textContent=`已载入「${c.name}」（保存于 ${c.time}）`;
+});
+$('resetDefault').addEventListener('click',()=>{
+  if(!confirm('恢复初始模板？当前未保存的改动会丢失')) return;
+  S=JSON.parse(JSON.stringify(TEMPLATE)); syncInputs(); build();
+});
+$('addGroup').addEventListener('click',()=>{
+  S.groups.push({name:'新层级', open:true, rows:[
+    {name:'新活动', match:'精准', ctr:0.5, budget:20, cpc:0.9, cvr:4.5, open:true, kws:[{kw:'新关键词', sv:10000}]}]});
+  build();
+});
+function syncInputs(){
+  $('price').value=S.price; $('margin').value=S.margin; $('target').value=S.target; $('acoas').value=S.acoas;
+}
+['price','margin','target','acoas'].forEach(id=>{
+  $(id).addEventListener('input',e=>{
+    S[id]=parseFloat(e.target.value)||0; schedule();
+  });
+});
+
+refreshCases(); syncInputs(); build();
+</script>
+</body>
+</html>
