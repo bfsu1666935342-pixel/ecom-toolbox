@@ -119,7 +119,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>广告结构反推测算<span class="ver">v6</span></h1>
+  <h1>广告结构反推测算<span class="ver">v6.1</span></h1>
   <div class="sub">三层结构：层级 → 广告活动 → 关键词。关键词一行一个、粘在一个框里；搜索量单独一列按行对应。活动的搜索量 = 该活动所有关键词搜索量之和（短语/广泛按精准词的搜索量计，不折算）。</div>
 
   <div class="card">
@@ -145,7 +145,7 @@
       <button class="btn" id="kwFill">用词库补全搜索量</button>
       <button class="btn" id="kwDel">删除该词库</button>
     </div>
-    <div class="hint" id="kwHint">支持西柚（父体分析 / 以词找词）、卖家精灵（ReverseASIN / asinKeywords）等导出：自动识别关键词列与搜索量列，周搜索量按 ×4.33 折算成月。词库只存本机，<b>不联网</b>；识别不出来时会弹面板让你手动指定列。</div>
+    <div class="hint" id="kwHint">支持西柚（父体分析 / 以词找词）、SIF / 卖家精灵（ReverseASIN / asinKeywords）、亚马逊 ABA（搜索词表现报告）等导出：自动识别「关键词 / 搜索词」与「搜索量 / 查询数量」列，并按导出覆盖天数折算成月（周≈×4.29，31 天≈×0.97）。词库只存本机，<b>不联网</b>；认不出来时会弹面板让你指定列和天数。</div>
   </div>
 
   <div class="card">
@@ -260,7 +260,7 @@
     <div class="mrow"><label>表头所在行</label><input id="kwMapRow" type="number" min="1" step="1" value="1"></div>
     <div class="mrow"><label>关键词列</label><select id="kwMapKw"></select></div>
     <div class="mrow"><label>搜索量列</label><select id="kwMapVol"></select></div>
-    <div class="mrow"><label>该列单位</label><select id="kwMapUnit"><option value="month">月搜索量</option><option value="week">周搜索量（×4.33 折算）</option></select></div>
+    <div class="mrow"><label>数据覆盖天数</label><input id="kwMapDays" type="number" min="1" max="400" step="1" value="30"><span style="font-size:11.5px;color:var(--dim);flex:1">按这个天数折算成月，30 = 本来就是月数据</span></div>
     <div class="acts">
       <button class="btn" id="kwMapCancel">取消这个文件</button>
       <button class="btn" id="kwMapOk">就用这些列</button>
@@ -693,7 +693,7 @@ $('resetDefault').addEventListener('click',()=>{
 });
 
 /* ============ 导出 / 导入（换电脑搬案例） ============ */
-const APP_ID='adstruct', APP_VER='6';
+const APP_ID='adstruct', APP_VER='6.1';
 const pad2=n=>String(n).padStart(2,'0');
 const stampNow=()=>{ const d=new Date();
   return d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate())+'-'+pad2(d.getHours())+pad2(d.getMinutes()); };
@@ -814,7 +814,7 @@ $('orgRate').addEventListener('input', e=>{ S.orgRate=parseFloat(e.target.value)
 });
 
 /* ================= 关键词库：xlsx / csv 解析 + 搜索量自动补全 ================= */
-const LS_KWLIB='adstruct_kwlib_v1', W2M=52/12;
+const LS_KWLIB='adstruct_kwlib_v1';
 let LIB=libLoad();
 
 function xlU16(u8,o){ return u8[o] | (u8[o+1]<<8); }
@@ -974,10 +974,10 @@ function xlParseCsv(text){
   });
 }
 
-const KW_HEAD=/关键词|流量词|搜索词|searchterm|query|keyword/i;
-const VOL_HEAD=/搜索量|搜索次数|searchvolume/i;
+const KW_ALIAS=/关键词|搜索词|搜索字词|流量词|查询词|keyword|searchterm|searchquery|query/i;
+const VOL_ALIAS=/搜索量|搜索次数|查询数量|查询量|searchvolume/i;
 const VOL_WEAK=/月搜索|周搜索|搜索/;
-const BAD_HEAD=/排名|rank|占比|份额|指数|竞争|难度|竞价|cpc|曝光|得分|频次/i;
+const BAD_ALIAS=/排名|rank|占比|份额|指数|竞争|难度|竞价|cpc|曝光|展示|得分|频次|价格/i;
 
 function kwNormHeader(s){ return String(s==null?'':s).replace(/\s+/g,'').replace(/[（）()【】\[\]]/g,'').toLowerCase(); }
 function kwNorm(k){ return String(k==null?'':k).replace(/[\u200b\ufeff\ufffc]/g,'').replace(/\s+/g,' ').trim().toLowerCase(); }
@@ -987,25 +987,58 @@ function kwVol(v){
   return isFinite(n)&&n>0?n:0;
 }
 
-function kwDetect(sheets){
+// 从文件名 / 表头标题里找导出时间段，返回覆盖天数（含首尾）
+function kwDates(text){
+  const s=String(text||'');
+  const m=/(20\d{2})[-/.]?(\d{1,2})[-/.]?(\d{1,2})\s*[~～\-—–至到]\s*(20\d{2})[-/.]?(\d{1,2})[-/.]?(\d{1,2})/.exec(s);
+  if(!m) return null;
+  const a=Date.UTC(+m[1],+m[2]-1,+m[3]), b=Date.UTC(+m[4],+m[5]-1,+m[6]);
+  const d=Math.round((b-a)/86400000)+1;
+  return (d>0&&d<=400)?d:null;
+}
+
+function kwPeriodDays(header, ctx){
+  const h=String(header||'');
+  if(/周/.test(h)) return 7;
+  if(/月/.test(h)) return 30;
+  const d=kwDates(ctx);
+  if(d) return d;                       // ABA 这类可选时间段的导出，按实际天数
+  if(/周/.test(ctx)) return 7;
+  if(/月/.test(ctx)) return 30;
+  return null;
+}
+
+function kwSource(ctx){
+  const s=String(ctx||'');
+  if(/西柚/.test(s)) return '西柚';
+  if(/SIF/.test(s)) return 'SIF';
+  if(/卖家精灵/.test(s)) return 'SIF/卖家精灵';
+  if(/查询数量|搜索展示量|搜索词表现|品牌分析|BrandAnalytics/i.test(s)) return 'ABA';
+  if(/流量词|SPR|标题密度/.test(s)) return 'SIF/卖家精灵';
+  return '未知';
+}
+
+function kwDetect(sheets, fname){
+  const ctx=[String(fname||'')];
+  sheets.forEach(sh=>(sh.rows||[]).slice(0,10).forEach(r=>ctx.push((r||[]).join(' '))));
+  const ctxText=ctx.join(' ');
   let best=null;
   for(const sh of sheets){
     for(let hi=0;hi<Math.min(6,sh.rows.length);hi++){
       const hdr=(sh.rows[hi]||[]).map(kwNormHeader);
       if(!hdr.length) continue;
-      const kwCol=hdr.findIndex(h=>KW_HEAD.test(h)&&!BAD_HEAD.test(h));
+      const kwCol=hdr.findIndex(h=>KW_ALIAS.test(h)&&!BAD_ALIAS.test(h));
       if(kwCol<0) continue;
-      let volCol=hdr.findIndex(h=>VOL_HEAD.test(h)&&!BAD_HEAD.test(h));
-      if(volCol<0) volCol=hdr.findIndex(h=>VOL_WEAK.test(h)&&!BAD_HEAD.test(h));
+      let volCol=hdr.findIndex(h=>VOL_ALIAS.test(h)&&!BAD_ALIAS.test(h));
+      if(volCol<0) volCol=hdr.findIndex(h=>VOL_WEAK.test(h)&&!BAD_ALIAS.test(h));
       if(volCol<0) continue;
       const dataRows=sh.rows.slice(hi+1).filter(r=>r && r[kwCol]!=null && String(r[kwCol]).trim() && kwVol(r[volCol])>0);
       if(!dataRows.length) continue;
       const h=String(sh.rows[hi][volCol]||'');
-      const unit=/周/.test(h)?'week':(/月/.test(h)?'month':'unknown');
-      const joined=(sh.rows[hi]||[]).join(' ');
-      const src=/西柚/.test(joined)?'西柚':(/流量词|SPR|标题密度/.test(joined)?'卖家精灵':'未知');
+      const days=kwPeriodDays(h, ctxText+' '+(sh.name||''));
+      const src=kwSource(ctxText+' '+(sh.name||''));
       if(!best || dataRows.length>best.dataRows.length){
-        best={sheet:sh.name, headerIdx:hi, kwCol, volCol, unit, src, header:h, dataRows};
+        best={sheet:sh.name, headerIdx:hi, kwCol, volCol, days, src, header:h, dataRows};
       }
     }
   }
@@ -1033,7 +1066,7 @@ function libRender(){
   const a=libActive();
   $('kwHint').innerHTML = a
     ? `当前词库：<b>${a.label}</b>，${a.count} 个词，导入于 ${a.importedAt}。关键词框里粘词后会自动补月搜索量（只补空白格，手填优先）。`
-    : '支持西柚（父体分析 / 以词找词）、卖家精灵（ReverseASIN / asinKeywords）等导出：自动识别关键词列与搜索量列，周搜索量按 ×4.33 折算成月。词库只存本机，<b>不联网</b>；识别不出来时会弹面板让你手动指定列。';
+    : '支持西柚（父体分析 / 以词找词）、SIF / 卖家精灵（ReverseASIN / asinKeywords）、亚马逊 ABA（搜索词表现报告）等导出：自动识别「关键词 / 搜索词」与「搜索量 / 查询数量」列，并按导出覆盖天数折算成月（周≈×4.29，31 天≈×0.97）。词库只存本机，<b>不联网</b>；认不出来时会弹面板让你指定列和天数。';
 }
 function kwFillAll(silent){
   const a=libActive();
@@ -1052,7 +1085,7 @@ function kwFillAll(silent){
 function kwManualMap(sheets, fname){
   return new Promise(resolve=>{
     const ov=$('kwMap'), shSel=$('kwMapSheet'), rowIn=$('kwMapRow'),
-          kwSel=$('kwMapKw'), volSel=$('kwMapVol'), unitSel=$('kwMapUnit');
+          kwSel=$('kwMapKw'), volSel=$('kwMapVol'), daysIn=$('kwMapDays');
     $('kwMapFile').textContent=fname;
     shSel.innerHTML=sheets.map((s,i)=>`<option value="${i}">${s.name}（${s.rows.length} 行）</option>`).join('');
     const fill=()=>{
@@ -1063,19 +1096,22 @@ function kwManualMap(sheets, fname){
       let opts='';
       for(let i=0;i<n;i++) opts+=`<option value="${i}">${xlColName(i)}：${(String(hdr[i]==null?'':hdr[i]).replace(/\s+/g,' ').slice(0,26)||'（空）')}</option>`;
       kwSel.innerHTML=opts; volSel.innerHTML=opts;
-      const guess=kwDetect([{name:sh.name, rows:sh.rows}]);
-      if(guess){ kwSel.value=String(guess.kwCol); volSel.value=String(guess.volCol); unitSel.value=guess.unit==='week'?'week':'month'; }
-      else { kwSel.value='0'; volSel.value=String(Math.min(1,n-1)); }
+      const guess=kwDetect([{name:sh.name, rows:sh.rows}], fname);
+      if(guess){
+        kwSel.value=String(guess.kwCol); volSel.value=String(guess.volCol);
+        if(guess.days) daysIn.value=String(guess.days);
+      } else { kwSel.value='0'; volSel.value=String(Math.min(1,n-1)); }
     };
     shSel.onchange=fill; rowIn.oninput=fill; fill();
     const close=(val)=>{ ov.classList.remove('on'); resolve(val); };
     $('kwMapOk').onclick=()=>{
       const sh=sheets[+shSel.value]||sheets[0];
       const hr=Math.min(Math.max(1,+rowIn.value||1),Math.max(1,sh.rows.length))-1;
-      const kwCol=+kwSel.value, volCol=+volSel.value, unit=unitSel.value;
+      const kwCol=+kwSel.value, volCol=+volSel.value;
+      const days=Math.min(Math.max(+daysIn.value||30,1),400);
       const dataRows=sh.rows.slice(hr+1).filter(r=>r && r[kwCol]!=null && String(r[kwCol]).trim() && kwVol(r[volCol])>0);
       if(!dataRows.length){ alert('这几列里没有有效数据，换个列试试'); return; }
-      close({sheet:sh.name, headerIdx:hr, kwCol, volCol, unit, src:'手动指定', header:'', dataRows});
+      close({sheet:sh.name, headerIdx:hr, kwCol, volCol, days, src:'手动指定', header:'', dataRows});
     };
     $('kwMapCancel').onclick=()=>close(null);
     ov.classList.add('on');
@@ -1084,20 +1120,22 @@ function kwManualMap(sheets, fname){
 
 async function kwImportFiles(files){
   if(!files||!files.length) return;
-  const items={}, sources=[]; let rows=0, filesOk=0;
+  const items={}, sources=[]; let rows=0, filesOk=0, daysUsed=[];
   for(const f of files){
     let sheets=null;
     try{
       if(/\.(csv|tsv|txt)$/i.test(f.name)) sheets=[{name:f.name, rows:xlParseCsv(await f.text())}];
       else sheets=await xlReadSheets(new Uint8Array(await f.arrayBuffer()));
     }catch(err){ alert(`「${f.name}」读不出来：${err.message}`); continue; }
-    let det=kwDetect(sheets);
+    let det=kwDetect(sheets, f.name);
     if(!det){
       det=await kwManualMap(sheets, f.name);
       if(!det) continue;
     }
     filesOk++;
-    const mul=det.unit==='week'?W2M:1;
+    const days=Math.min(Math.max(det.days||30,1),400);
+    const mul=30/days;                  // 统一折算成「每月」
+    if(daysUsed.indexOf(days)<0) daysUsed.push(days);
     det.dataRows.forEach(r=>{
       const kw=kwNorm(r[det.kwCol]);
       const v=kwVol(r[det.volCol]);
@@ -1117,7 +1155,9 @@ async function kwImportFiles(files){
   if(!libSave()) alert('词库太大，浏览器存不下：本次可用，但刷新后会丢。建议一次只导入需要的表。');
   libRender();
   const res=kwFillAll(true);
-  $('kwHint').innerHTML=`已导入 <b>${count}</b> 个词（${filesOk} 个文件，${rows} 行有效），自动补全 <b>${res.filled}</b> 个词的搜索量${res.miss?`，还有 ${res.miss} 个词没数据`:''}。周数据已按 ×4.33 折算成月。`;
+  $('kwHint').innerHTML=`已导入 <b>${count}</b> 个词（${filesOk} 个文件，${rows} 行有效）`+
+    (daysUsed.length===1?`，原表覆盖 ${daysUsed[0]} 天，已折算成月`:(daysUsed.length?`，按 ${daysUsed.join('/')} 天分别折算成月`:'，已按每月口径存'))+
+    `；自动补全 <b>${res.filled}</b> 个词的搜索量${res.miss?`，还有 ${res.miss} 个词没数据`:''}。`;
 }
 
 $('kwImport').addEventListener('click',()=>$('kwFiles').click());
