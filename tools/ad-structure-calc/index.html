@@ -977,7 +977,7 @@ function xlParseCsv(text){
 const KW_ALIAS=/关键词|搜索词|搜索字词|流量词|查询词|keyword|searchterm|searchquery|query/i;
 const VOL_ALIAS=/搜索量|搜索次数|查询数量|查询量|searchvolume/i;
 const VOL_WEAK=/月搜索|周搜索|搜索/;
-const BAD_ALIAS=/排名|rank|占比|份额|指数|竞争|难度|竞价|cpc|曝光|展示|得分|频次|价格/i;
+const BAD_ALIAS=/排名|rank|占比|份额|指数|竞争|难度|竞价|cpc|曝光|展示|得分|频次|价格|增长|环比|同比|变化/i;
 
 function kwNormHeader(s){ return String(s==null?'':s).replace(/\s+/g,'').replace(/[（）()【】\[\]]/g,'').toLowerCase(); }
 function kwNorm(k){ return String(k==null?'':k).replace(/[\u200b\ufeff\ufffc]/g,'').replace(/\s+/g,' ').trim().toLowerCase(); }
