@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>月目标 → 日均测算（黑五 / 圣诞）</title>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--line:#e3e6ea;--ink:#1c2430;--sub:#6b7684;--brand:#1f4e79;--up:#0f7b4f;--down:#c0392b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:22px;margin:0 0 6px}
+  .sub{color:var(--sub);font-size:13px;margin-bottom:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+  .settings{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:12px;color:var(--sub)}
+  input[type=number]{width:92px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:14px}
+  input[type=text]{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:14px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  th{background:#f0f3f7;font-weight:600;font-size:12.5px;color:#33455c}
+  th:first-child,td:first-child{text-align:left}
+  td input{width:92px}
+  td.name{min-width:120px}
+  span.nm{display:inline-block;min-width:70px;padding:2px 4px;border-radius:4px;font-weight:600;outline:none}
+  span.nm:focus{background:#eef3fa;box-shadow:0 0 0 1px #b9cee6}
+  tr.total td{font-weight:700;background:#fafbfd}
+  .up{color:var(--up)} .down{color:var(--down)}
+  .hint{color:var(--sub);font-size:12px;margin-top:10px;line-height:1.7}
+  .toolbar{display:flex;gap:10px;margin-top:12px}
+  button{padding:7px 14px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-size:13px}
+  button.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .formula{background:#f0f3f7;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#33455c;margin-top:10px}
+  code{background:#e8edf3;padding:1px 5px;border-radius:4px}
+  td.del button{padding:2px 8px;border-color:#e3e6ea;color:#98a2b3}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>月目标 → 平时日均 / 活动日均 测算 <span style="font-size:12px;color:#0f7b4f;border:1px solid #cfead9;background:#eefaf3;border-radius:10px;padding:2px 8px;vertical-align:middle">v3</span></h1>
+  <div class="sub">输入数字时不再逐字重算——停手 0.6 秒或按回车/离开输入框后才计算。活动期销量 = 平时 × 倍数（默认 5）。</div>
+
+  <div class="card">
+    <div class="settings">
+      <div class="field"><label>活动倍数</label><input id="mult" type="number" value="5" min="1" step="0.5"></div>
+      <div class="field"><label>11月天数</label><input id="novDays" type="number" value="30" min="28" max="31"></div>
+      <div class="field"><label>黑五起（日）</label><input id="bfStart" type="number" value="19" min="1" max="31"></div>
+      <div class="field"><label>黑五止（日）</label><input id="bfEnd" type="number" value="30" min="1" max="31"></div>
+      <div class="field"><label>12月天数</label><input id="decDays" type="number" value="31" min="28" max="31"></div>
+      <div class="field"><label>圣诞活动天数</label><input id="xDays" type="number" value="15" min="1" max="31"></div>
+    </div>
+    <div class="formula" id="formula"></div>
+  </div>
+
+  <div class="card">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>产品</th><th>11月目标</th><th>11月平时日均</th><th>黑五日均</th><th>黑五合计</th>
+          <th>12月目标</th><th>12月平时日均</th><th>圣诞日均</th><th>圣诞合计</th>
+          <th>现日均</th><th>12月差距</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot><tr class="total" id="totalRow"></tr></tfoot>
+    </table>
+    <div class="toolbar">
+      <button class="primary" onclick="addRow()">+ 加一个产品</button>
+      <button onclick="resetRows()">恢复默认</button>
+      <button onclick="exportCSV()">导出 CSV</button>
+    </div>
+    <div class="hint">12月差距 = 12月平时日均 − 现日均（红＝不够，绿＝已超过）。数据保存在本机浏览器。</div>
+  </div>
+
+  <div class="card">
+    <div class="hint">
+      <b>计算逻辑</b><br>
+      平时日均 = 月目标 ÷（平时天数 + 活动天数 × 倍数）；活动日均 = 平时日均 × 倍数<br>
+      黑五 12 天约占 11 月目标 <b id="shareNov">—</b>；圣诞 15 天约占 12 月目标 <b id="shareDec">—</b>。
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULTS = [
+  {name:'产品 A', nov:1151, dec:2093, act:21.0},
+  {name:'产品 B',  nov:921,  dec:1395, act:21.6},
+  {name:'产品 C',  nov:395,  dec:527,  act:7.9},
+  {name:'产品 D', nov:600,  dec:1256, act:5.9},
+  {name:'产品 E', nov:150,  dec:150,  act:0.3},
+  {name:'产品 F', nov:500,  dec:500,  act:5.3},
+];
+const KEY = 'monthlyPromoCalc.v2';
+let rows = [];
+let settings = {mult:5, novDays:30, bfStart:19, bfEnd:30, decDays:31, xDays:15};
+
+const $ = id => document.getElementById(id);
+const n = id => Math.max(0, Number($(id).value) || 0);
+const fmt = (v, d=1) => (isFinite(v) ? v.toFixed(d) : '0.0');
+
+function readSettings(){
+  settings = {mult:n('mult')||5, novDays:n('novDays')||30, bfStart:n('bfStart')||19,
+              bfEnd:n('bfEnd')||30, decDays:n('decDays')||31, xDays:n('xDays')||15};
+}
+function novPromoDays(){ return Math.max(Math.min(settings.bfEnd, settings.novDays) - settings.bfStart + 1, 0); }
+function calc(target, days, promo, mult){
+  const normal = Math.max(days - promo, 0);
+  const denom = normal + promo * mult;
+  const base = denom > 0 ? target / denom : 0;
+  return {base, promoDaily: base * mult, promoTotal: base * mult * promo, promo, normal, denom};
+}
+
+function buildTable(){
+  const tb = $('tbody');
+  tb.innerHTML = '';
+  rows.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="name"><span class="nm" contenteditable="true" spellcheck="false" data-i="${i}" data-k="name"></span></td>
+      <td><input type="number" data-i="${i}" data-k="nov"></td>
+      <td data-c="novBase">—</td>
+      <td data-c="novPromo"><b>—</b></td>
+      <td data-c="novTotal">—</td>
+      <td><input type="number" data-i="${i}" data-k="dec"></td>
+      <td data-c="decBase">—</td>
+      <td data-c="decPromo"><b>—</b></td>
+      <td data-c="decTotal">—</td>
+      <td><input type="number" step="0.1" data-i="${i}" data-k="act"></td>
+      <td data-c="gap">—</td>
+      <td class="del"><button onclick="delRow(${i})">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  syncInputs();
+  recalc();
+}
+
+function syncInputs(){
+  [...$('tbody').querySelectorAll('input')].forEach(inp => {
+    const r = rows[Number(inp.dataset.i)];
+    if (!r) return;
+    inp.value = r[inp.dataset.k];
+  });
+  [...$('tbody').querySelectorAll('.nm')].forEach(sp => {
+    const r = rows[Number(sp.dataset.i)];
+    if (r) sp.textContent = r.name;
+  });
+}
+
+function recalc(){
+  readSettings();
+  const novP = novPromoDays();
+  let t = {nov:0, dec:0, novBase:0, decBase:0, novPromo:0, decPromo:0, novTotal:0, decTotal:0};
+  const trs = [...$('tbody').children];
+
+  rows.forEach((r, i) => {
+    const a = calc(Number(r.nov) || 0, settings.novDays, novP, settings.mult);
+    const b = calc(Number(r.dec) || 0, settings.decDays, settings.xDays, settings.mult);
+    const gap = b.base - (Number(r.act) || 0);
+    const tr = trs[i];
+    if (tr){
+      tr.querySelector('[data-c="novBase"]').textContent = fmt(a.base);
+      tr.querySelector('[data-c="novPromo"]').innerHTML = '<b>' + fmt(a.promoDaily) + '</b>';
+      tr.querySelector('[data-c="novTotal"]').textContent = Math.round(a.promoTotal).toLocaleString();
+      tr.querySelector('[data-c="decBase"]').textContent = fmt(b.base);
+      tr.querySelector('[data-c="decPromo"]').innerHTML = '<b>' + fmt(b.promoDaily) + '</b>';
+      tr.querySelector('[data-c="decTotal"]').textContent = Math.round(b.promoTotal).toLocaleString();
+      const g = tr.querySelector('[data-c="gap"]');
+      g.textContent = (gap > 0 ? '+' : '') + fmt(gap);
+      g.className = gap <= 0 ? 'up' : 'down';
+    }
+    t.nov += Number(r.nov) || 0; t.dec += Number(r.dec) || 0;
+    t.novBase += a.base; t.decBase += b.base;
+    t.novPromo += a.promoDaily; t.decPromo += b.promoDaily;
+    t.novTotal += a.promoTotal; t.decTotal += b.promoTotal;
+  });
+
+  $('totalRow').innerHTML = `<td>合计</td><td>${t.nov.toLocaleString()}</td><td>${fmt(t.novBase)}</td>
+    <td>${fmt(t.novPromo)}</td><td>${Math.round(t.novTotal).toLocaleString()}</td>
+    <td>${t.dec.toLocaleString()}</td><td>${fmt(t.decBase)}</td><td>${fmt(t.decPromo)}</td>
+    <td>${Math.round(t.decTotal).toLocaleString()}</td><td></td><td></td><td></td>`;
+
+  const dNov = settings.novDays - novP, dDec = settings.decDays - settings.xDays;
+  $('formula').innerHTML =
+    `11月：<code>目标 ÷ (${dNov} 平时 + ${novP} 活动 × ${settings.mult})</code> → 平时日均 = 目标 ÷ ${(dNov + novP * settings.mult).toFixed(0)}` +
+    `　｜12月：<code>目标 ÷ (${dDec} 平时 + ${settings.xDays} 活动 × ${settings.mult})</code> → 平时日均 = 目标 ÷ ${(dDec + settings.xDays * settings.mult).toFixed(0)}`;
+  $('shareNov').textContent = ((novP * settings.mult) / (dNov + novP * settings.mult) * 100).toFixed(0) + '%';
+  $('shareDec').textContent = ((settings.xDays * settings.mult) / (dDec + settings.xDays * settings.mult) * 100).toFixed(0) + '%';
+  save();
+}
+
+// 输入：只记值，不立刻算；停手 600ms 或回车/失焦才算
+let timer = null;
+function scheduleCalc(){ clearTimeout(timer); timer = setTimeout(recalc, 600); }
+$('tbody').addEventListener('input', e => {
+  const inp = e.target;
+  const i = Number(inp.dataset.i), k = inp.dataset.k;
+  if (!rows[i] || !k) return;
+  if (k === 'name'){ rows[i].name = inp.textContent.trim(); scheduleCalc(); return; }
+  if (inp.tagName !== 'INPUT') return;
+  rows[i][k] = Number(inp.value) || 0;
+  scheduleCalc();
+});
+$('tbody').addEventListener('change', e => { if (e.target.tagName === 'INPUT') { clearTimeout(timer); recalc(); } });
+$('tbody').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); recalc(); e.target.blur(); } });
+
+['mult','novDays','bfStart','bfEnd','decDays','xDays'].forEach(id => $(id).addEventListener('input', scheduleCalc));
+
+function addRow(){ rows.push({name:'新产品', nov:0, dec:0, act:0}); buildTable(); }
+function delRow(i){ rows.splice(i, 1); buildTable(); }
+function resetRows(){
+  rows = structuredClone(DEFAULTS);
+  settings = {mult:5, novDays:30, bfStart:19, bfEnd:30, decDays:31, xDays:15};
+  ['mult','novDays','bfStart','bfEnd','decDays','xDays'].forEach(k => $(k).value = settings[k]);
+  buildTable();
+}
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({rows, settings})); }catch(e){} }
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && Array.isArray(s.rows) && s.rows.length){ rows = s.rows; if (s.settings) settings = s.settings; return; }
+  }catch(e){}
+  rows = structuredClone(DEFAULTS);
+}
+
+function exportCSV(){
+  readSettings();
+  const novP = novPromoDays();
+  const out = [['产品','11月目标','11月平时日均','黑五日均','黑五合计','12月目标','12月平时日均','圣诞日均','圣诞合计','现日均','12月差距']];
+  rows.forEach(r => {
+    const a = calc(Number(r.nov) || 0, settings.novDays, novP, settings.mult);
+    const b = calc(Number(r.dec) || 0, settings.decDays, settings.xDays, settings.mult);
+    out.push([r.name, r.nov, a.base.toFixed(1), a.promoDaily.toFixed(1), Math.round(a.promoTotal),
+              r.dec, b.base.toFixed(1), b.promoDaily.toFixed(1), Math.round(b.promoTotal),
+              r.act, (b.base - (Number(r.act) || 0)).toFixed(1)]);
+  });
+  const csv = '\ufeff' + out.map(l => l.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = '月目标日均测算.csv';
+  a.click();
+}
+
+load();
+['mult','novDays','bfStart','bfEnd','decDays','xDays'].forEach(k => $(k).value = settings[k]);
+buildTable();
+</script>
+</body>
+</html>
