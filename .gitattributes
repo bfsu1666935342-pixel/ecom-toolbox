@@ -1,3 +1,6 @@
 # 工作记录工具是前端构建产物，按原样保持 LF 换行，
 # 避免 Windows 上 core.autocrlf=true 时 checkout 被转成 CRLF 产生假 diff。
 tools/worklog/index.html text eol=lf
+
+# 缺点转问答是手写单文件，也固定成 LF，保持字节稳定。
+tools/review-to-qa/index.html text eol=lf

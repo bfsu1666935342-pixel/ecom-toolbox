@@ -12,6 +12,7 @@
 | [流量承接诊断](tools/k-exposure/) | 导入搜索词报告 + 搜索量词库，算每个词的曝光覆盖率 k 与 CTR、CVR、CPA，判断是「没被看到」（k 低，抢位置）还是「看到了不点」（CTR 低，改主图/价格），逐词给结论 | v1.0 |
 | [月目标日均测算](tools/monthly-target/) | 把旺季月目标拆成「平时日均 + 活动日均」，按活动倍数和黑五/圣诞天数算出每天要卖多少、差多少，可导出 CSV | v3 |
 | [工作记录](tools/worklog/) | 待办清单：新建任务（日期 / 说明 / 附件 / 飞书链接），打勾完成即按月份和日期归档，顶部统计进行中与已过期项；另有一栏常用飞书文档，一键直达 | v1.0 |
+| [缺点转问答](tools/review-to-qa/) | 贴入 Alexa 的「买家主要抱怨」，每个缺点自动拆成 6 条 Q&A（确认 / 时间线 / 高强度使用 / 避坑 / 售后 / 值不值），中文一页、英文一页，导出两 sheet 的 Excel | v1.0 |
 
 新工具加好后请同步更新这个表、[首页卡片](index.html) 和下面的目录树。
 
@@ -33,8 +34,11 @@ ecom-toolbox/
    ├─ monthly-target/
    │  ├─ index.html              # 月目标日均测算
    │  └─ README.md
-   └─ worklog/
-      ├─ index.html              # 工作记录（React 打包产物，约 540 KB）
+   ├─ worklog/
+   │  ├─ index.html              # 工作记录（React 打包产物，约 540 KB）
+   │  └─ README.md
+   └─ review-to-qa/
+      ├─ index.html              # 缺点转问答（模板引擎 + 手写 xlsx 导出）
       └─ README.md
 ```
 
