@@ -4,3 +4,6 @@ tools/worklog/index.html text eol=lf
 
 # 缺点转问答是手写单文件，也固定成 LF，保持字节稳定。
 tools/review-to-qa/index.html text eol=lf
+
+# SPU 月度备货表同样固定 LF，避免 Windows 换行造成假 diff。
+tools/spu-stock-plan/index.html text eol=lf

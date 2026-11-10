@@ -13,6 +13,7 @@
 | [月目标日均测算](tools/monthly-target/) | 把旺季月目标拆成「平时日均 + 活动日均」，按活动倍数和黑五/圣诞天数算出每天要卖多少、差多少，可导出 CSV | v3 |
 | [工作记录](tools/worklog/) | 待办清单：新建任务（日期 / 说明 / 附件 / 飞书链接），打勾完成即按月份和日期归档，顶部统计进行中与已过期项；另有一栏常用飞书文档，一键直达 | v1.0 |
 | [缺点转问答](tools/review-to-qa/) | 贴入 Alexa 的「买家主要抱怨」，每条缺点单独调 AI 生成 6 条只围绕这一点的 Q&A（软硬 / 久坐 / 塌陷 / 透气 / 体型 / 调整），中文一页、英文一页，导出两 sheet 的 Excel；无网可用内置模板兜底 | v2.0 |
+| [SPU 月度备货表](tools/spu-stock-plan/) | 单个 SPU 多个 SKU 按月备货：每月独立活动天数、安全库存与日销，自动算月需求、建议备货、期末库存、可售天数与总日均，支持多月标签、CSV 和整月打印 | v1.0 |
 
 新工具加好后请同步更新这个表、[首页卡片](index.html) 和下面的目录树。
 
@@ -37,9 +38,13 @@ ecom-toolbox/
    ├─ worklog/
    │  ├─ index.html              # 工作记录（React 打包产物，约 540 KB）
    │  └─ README.md
-   └─ review-to-qa/
-      ├─ index.html              # 缺点转问答（模板引擎 + 手写 xlsx 导出）
-      └─ README.md
+   ├─ review-to-qa/
+   │  ├─ index.html              # 缺点转问答（模板引擎 + 手写 xlsx 导出）
+   │  └─ README.md
+   └─ spu-stock-plan/
+      ├─ index.html              # SPU 月度备货表
+      ├─ README.md
+      └─ preview.png
 ```
 
 一个工具的完整地址是 `/tools/<工具名>/`，因为每个目录里都有 `index.html`，所以 URL 不用带文件名。
