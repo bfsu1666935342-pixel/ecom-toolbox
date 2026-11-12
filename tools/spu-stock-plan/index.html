@@ -148,6 +148,17 @@ button{cursor:pointer}
 .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stepper input:focus{outline:none}
 .day-split{font-size:10px;color:var(--muted-2);white-space:nowrap}
+.segmented{
+  display:inline-flex;align-items:center;gap:1px;height:27px;padding:2px;
+  background:#f7f3ea;border:1px solid transparent;border-radius:6px;
+}
+.segmented button{
+  height:21px;padding:0 7px;border:0;border-radius:4px;background:transparent;
+  color:var(--muted-2);font-size:9.5px;font-weight:500;transition:.14s;
+}
+.segmented button:hover{color:var(--ink-2)}
+.segmented button.is-active{background:#fff;color:var(--ink);font-weight:650;box-shadow:0 1px 2px rgba(31,28,22,.08)}
+.first-opening{font-size:9.5px;color:var(--muted-2);white-space:nowrap}
 .delete-month{
   margin-left:auto;border:0;background:transparent;padding:3px 2px;
   color:var(--muted-2);font-size:10px;white-space:nowrap;
@@ -232,10 +243,13 @@ tr:hover .row-del,.row-del:focus-visible{opacity:1}
 .num-input:hover{background:#f8f4ec}
 .num-input:focus{outline:none;background:#fff;border-color:#e2b6a0;box-shadow:0 0 0 3px rgba(194,65,12,.07)}
 .cell-demand{font-weight:650;font-variant-numeric:tabular-nums}
-.cell-avail{color:var(--ink-2);font-variant-numeric:tabular-nums}
+.cell-before{font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.cell-before.negative{color:var(--red)}
 .cell-suggest{font-weight:700;color:var(--accent-2);font-variant-numeric:tabular-nums}
 .cell-suggest.zero{color:var(--muted-2);font-weight:500}
-.cell-end{font-weight:600;font-variant-numeric:tabular-nums}
+.cell-after{font-weight:650;font-variant-numeric:tabular-nums}
+.opening-value{font-weight:600;font-variant-numeric:tabular-nums}
+.opening-src{display:block;font-size:8px;font-weight:400;color:var(--muted-2);line-height:1.35;margin-top:1px;white-space:nowrap}
 .cover{display:block;font-size:8.5px;font-weight:400;color:var(--muted-2);margin-top:1px;line-height:1.4;white-space:nowrap}
 .status{
   display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;
@@ -255,6 +269,7 @@ tfoot td{
 tfoot td:first-child{padding-left:16px}
 tfoot td:last-child{padding-right:16px;text-align:center}
 tfoot td.num{text-align:right}
+tfoot td.negative{color:var(--red)}
 tfoot td.foot-avg{text-align:center;white-space:nowrap}
 .foot-avg-label{font-size:8.5px;font-weight:500;color:var(--muted-2);margin-right:3px}
 .foot-avg-value{font-size:12.5px;font-weight:700;color:var(--ink)}
@@ -278,6 +293,7 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
 .alert.red{color:var(--red)}.alert.red i{background:var(--red)}
 .alert.blue{color:var(--blue)}.alert.blue i{background:var(--blue)}
 .alert.green{color:var(--green)}.alert.green i{background:var(--green)}
+.alert.amber{color:#946119}.alert.amber i{background:#c69a49}
 .alert.neutral i{background:#c69a49}
 
 .method{margin:10px 2px 0;padding:0}
@@ -412,6 +428,7 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
   .print-table td:last-child{text-align:center;padding-right:5px}
   .print-table .p-suggest{font-weight:700;color:#9a3412}
   .print-table .p-zero{font-weight:400;color:#888}
+  .print-table .p-before.negative{color:#b02a1e}
   .print-table .p-cover{display:block;font-size:6.5px;color:#777;font-weight:400;margin-top:0}
   .print-table tr.total td{border-top:1px solid #999;border-bottom:1.5px solid #222;background:#f8f5ed;font-weight:700}
   .print-table .p-avg{text-align:center;font-weight:600;color:#555}
@@ -461,7 +478,7 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
   <section class="planner" id="plannerPanel" aria-label="月度备货计划">
     <div class="tabs-row">
       <div class="month-tabs" id="monthTabs" role="tablist" aria-label="月份"></div>
-      <button class="month-add" type="button" data-add-month title="新增下一个月，复制上月日销，期初库存取上月期末">＋ 月份</button>
+      <button class="month-add" type="button" data-add-month title="新增下一个月，复制上月日销，期初库存自动承接上月补货后库存">＋ 月份</button>
     </div>
 
     <div class="month-settings">
@@ -481,6 +498,14 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
           <button type="button" data-step="safety" data-delta="1" aria-label="安全库存天数加 1">＋</button>
         </div>
       </div>
+      <div class="setting opening-setting">
+        <span id="openingLabel">期初库存</span>
+        <div class="segmented" id="openingToggle" role="group" aria-labelledby="openingLabel">
+          <button type="button" data-opening-mode="auto" title="自动承接上月补货后库存">自动</button>
+          <button type="button" data-opening-mode="manual" title="手动填写本月期初库存">手动</button>
+        </div>
+        <span class="first-opening" id="firstOpeningHint" hidden>首月填写</span>
+      </div>
       <span class="day-split" id="dayHint">—</span>
       <button class="delete-month" type="button" id="deleteMonth" data-delete-month>删除本月</button>
     </div>
@@ -495,7 +520,7 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
         <div class="summary-value"><span class="accent" id="sumSuggest">—</span><small>件</small></div>
       </div>
       <div class="summary-item">
-        <span class="summary-label">备货后库存</span>
+        <span class="summary-label">补货后库存</span>
         <div class="summary-value"><span id="sumStock">—</span><small>件</small></div>
       </div>
       <div class="summary-item">
@@ -518,16 +543,16 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     <div class="table-scroll" id="tableScroll">
       <table>
         <colgroup>
-          <col style="width:24%"/>
+          <col style="width:22.5%"/>
           <col style="width:8%"/>
           <col style="width:8%"/>
           <col style="width:8.5%"/>
+          <col style="width:8.5%"/>
           <col style="width:7.5%"/>
-          <col style="width:7.5%"/>
-          <col style="width:7.5%"/>
-          <col style="width:10%"/>
+          <col style="width:9%"/>
           <col style="width:9.5%"/>
           <col style="width:9.5%"/>
+          <col style="width:9%"/>
         </colgroup>
         <thead>
           <tr>
@@ -535,11 +560,11 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
             <th scope="col" class="num">日常日销</th>
             <th scope="col" class="num">活动日销</th>
             <th scope="col" class="num">月需求</th>
-            <th scope="col" class="num">现有库存</th>
+            <th scope="col" class="num" title="首月手动填写；后续默认承接上月补货后库存，可切换为手动">期初库存</th>
             <th scope="col" class="num">在途库存</th>
-            <th scope="col" class="num">可用库存</th>
+            <th scope="col" class="num" title="期初库存 + 在途库存 − 月需求">补货前库存</th>
             <th scope="col" class="num">建议备货</th>
-            <th scope="col" class="num">期末库存</th>
+            <th scope="col" class="num" title="补货前库存 + 建议备货，并自动作为下月期初">补货后库存</th>
             <th scope="col" class="status-col">状态</th>
           </tr>
         </thead>
@@ -551,11 +576,11 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
               <span class="foot-avg-label">总日均</span><span class="foot-avg-value" id="totalAvg">—</span><span class="foot-avg-unit">件/天</span>
             </td>
             <td class="num"><span class="foot-total" id="totalDemand">—</span></td>
-            <td class="num" id="totalStock">—</td>
+            <td class="num" id="totalOpening">—</td>
             <td class="num" id="totalInbound">—</td>
-            <td class="num" id="totalAvail">—</td>
+            <td class="num" id="totalBefore">—</td>
             <td class="num"><span class="foot-total" id="totalSuggest">—</span></td>
-            <td class="num" id="totalEnd">—</td>
+            <td class="num" id="totalAfter">—</td>
             <td><span class="foot-status" id="totalStatus">—</span></td>
           </tr>
         </tfoot>
@@ -574,20 +599,20 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
       </div>
       <div>
         <b>02 · 建议备货</b>
-        建议备货 = max(0, 月需求 + 日均销量 × 安全库存天数 − 现有库存 − 在途库存)，向上取整
+        建议备货 = max(0, 月需求 + 日均销量 × 安全库存天数 − 期初库存 − 在途库存)，向上取整
       </div>
       <div>
-        <b>03 · 期末可售</b>
-        期末库存 = 可用库存 + 建议备货 − 月需求；可售天数 = 期末库存 ÷ 日均销量
+        <b>03 · 库存链路</b>
+        补货前库存 = 期初库存 + 在途库存 − 月需求；补货后库存 = 补货前库存 + 建议备货；下月期初默认承接本月补货后库存
       </div>
       <div class="method-note">
-        各月独立测算。新增月份会复制上月日销，并把上月期末库存作为下月期初库存；状态按备货前可售天数是否低于安全线 70% 区分紧急程度。导出与打印包含全部月份。总日均为各 SKU 日均之和（月需求合计 ÷ 本月天数）。
+        首月手动填写期初库存；后续月份默认自动承接上月补货后库存，也可以切换为手动录入。补货后库存包含建议备货，如果实际没有下单或没有到货，请把对应月份改成手动或调整在途。状态按备货前可售天数是否低于安全线 70% 区分紧急程度。导出与打印包含全部月份。总日均为各 SKU 日均之和（月需求合计 ÷ 本月天数）。
       </div>
     </div>
   </details>
 
   <div class="page-foot">
-    <span>各月独立保存 · 导出与打印包含全部月份</span>
+    <span>各月库存自动衔接 · 导出与打印包含全部月份</span>
     <span class="foot-actions">
       <button class="text-btn" type="button" data-blank>清空重填</button>
       <button class="text-btn" type="button" data-reset>恢复示例</button>
@@ -624,6 +649,8 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     monthTabs: $('#monthTabs'),
     activity: $('#activityDays'),
     safety: $('#safetyDays'),
+    openingToggle: $('#openingToggle'),
+    firstOpeningHint: $('#firstOpeningHint'),
     dayHint: $('#dayHint'),
     deleteMonth: $('#deleteMonth'),
     sumDemand: $('#sumDemand'),
@@ -635,11 +662,11 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     footCount: $('#footCount'),
     totalAvg: $('#totalAvg'),
     totalDemand: $('#totalDemand'),
-    totalStock: $('#totalStock'),
+    totalOpening: $('#totalOpening'),
     totalInbound: $('#totalInbound'),
-    totalAvail: $('#totalAvail'),
+    totalBefore: $('#totalBefore'),
     totalSuggest: $('#totalSuggest'),
-    totalEnd: $('#totalEnd'),
+    totalAfter: $('#totalAfter'),
     totalStatus: $('#totalStatus'),
     alertList: $('#alertList'),
     scrollHint: $('#scrollHint'),
@@ -775,6 +802,7 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
         month: seed.month,
         activityDays: seed.activityDays,
         safetyDays: seed.safetyDays,
+        manualOpening: index === 0,
         data: data
       };
     });
@@ -793,6 +821,7 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
       month: currentMonth(),
       activityDays: 0,
       safetyDays: 15,
+      manualOpening: true,
       data: {}
     };
     month.data[sku.id] = zeroRow();
@@ -863,12 +892,14 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
         month: m.month,
         activityDays: clampInt(m.activityDays, 0, monthDays, 0),
         safetyDays: clampInt(m.safetyDays, 0, 180, 15),
+        manualOpening: m.manualOpening === true,
         data: data
       });
     });
 
     if (!months.length) return null;
     months.sort(function(a, b){ return a.month.localeCompare(b.month); });
+    months[0].manualOpening = true;
 
     var activeId = months.some(function(m){ return m.id === raw.activeId; }) ? raw.activeId : months[0].id;
     return {
@@ -884,86 +915,113 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
   }
 
   /* ---------- calculations ---------- */
-  function calcMonth(month){
-    var days = daysInMonth(month.month);
-    var act = clampInt(month.activityDays, 0, days, 0);
-    var normalDays = days - act;
-    var safety = clampInt(month.safetyDays, 0, 180, 0);
+  function calcAll(){
+    var previousEnd = null;
 
-    var rows = state.skus.map(function(sku){
-      var d = month.data[sku.id] || zeroRow();
-      var demand = d.daily * normalDays + d.promo * act;
-      var promoDemand = d.promo * act;
-      var avg = days > 0 ? demand / days : 0;
-      var avail = d.stock + d.inbound;
-      var targetEnd = avg * safety;
-      var suggest = Math.max(0, Math.ceil(demand + targetEnd - avail - 1e-9));
-      var end = avail + suggest - demand;
-      var cover = avg > 0 ? end / avg : null;
-      var currentCover = avg > 0 ? avail / avg : null;
+    return state.months.map(function(month, index){
+      var days = daysInMonth(month.month);
+      var act = clampInt(month.activityDays, 0, days, 0);
+      var normalDays = days - act;
+      var safety = clampInt(month.safetyDays, 0, 180, 0);
+      var isFirst = index === 0;
+      var previousMonth = isFirst ? null : state.months[index - 1];
+      var gapBefore = !!(previousMonth && addMonths(previousMonth.month, 1) !== month.month);
+      var autoOpening = !isFirst && !month.manualOpening;
 
-      var status;
-      if (demand <= 0.0001) {
-        status = { key: 'none', label: '暂无销量' };
-      } else if (suggest > 0 && currentCover !== null && currentCover < Math.max(5, safety * 0.7)) {
-        status = { key: 'urgent', label: '紧急补货' };
-      } else if (suggest > 0) {
-        status = { key: 'restock', label: '建议补货' };
-      } else if (cover !== null && cover > Math.max(30, safety * 2)) {
-        status = { key: 'over', label: '库存偏高' };
-      } else {
-        status = { key: 'ok', label: '库存健康' };
-      }
+      var rows = state.skus.map(function(sku){
+        var d = month.data[sku.id] || zeroRow();
+        var opening = autoOpening
+          ? (previousEnd && previousEnd.has(sku.id) ? previousEnd.get(sku.id) : 0)
+          : d.stock;
+        var inbound = d.inbound;
+        var demand = d.daily * normalDays + d.promo * act;
+        var promoDemand = d.promo * act;
+        var avg = days > 0 ? demand / days : 0;
+        var avail = opening + inbound;
+        var before = avail - demand;
+        var targetEnd = avg * safety;
+        var suggest = Math.max(0, Math.ceil(demand + targetEnd - avail - 1e-9));
+        var after = before + suggest;
+        var cover = avg > 0 ? after / avg : null;
+        var currentCover = avg > 0 ? avail / avg : null;
+
+        var status;
+        if (demand <= 0.0001) {
+          status = { key: 'none', label: '暂无销量' };
+        } else if (suggest > 0 && currentCover !== null && currentCover < Math.max(5, safety * 0.7)) {
+          status = { key: 'urgent', label: '紧急补货' };
+        } else if (suggest > 0) {
+          status = { key: 'restock', label: '建议补货' };
+        } else if (cover !== null && cover > Math.max(30, safety * 2)) {
+          status = { key: 'over', label: '库存偏高' };
+        } else {
+          status = { key: 'ok', label: '库存健康' };
+        }
+
+        return {
+          id: sku.id,
+          name: sku.name,
+          daily: d.daily,
+          promo: d.promo,
+          stock: opening,
+          opening: opening,
+          autoOpening: autoOpening,
+          inbound: inbound,
+          demand: demand,
+          promoDemand: promoDemand,
+          avg: avg,
+          avail: avail,
+          before: before,
+          targetEnd: targetEnd,
+          suggest: suggest,
+          after: after,
+          end: after,
+          cover: cover,
+          currentCover: currentCover,
+          status: status
+        };
+      });
+
+      previousEnd = new Map(rows.map(function(row){ return [row.id, row.after]; }));
+
+      var totalDemand = rows.reduce(function(sum, row){ return sum + row.demand; }, 0);
+      var totalPromo = rows.reduce(function(sum, row){ return sum + row.promoDemand; }, 0);
+      var totalOpening = rows.reduce(function(sum, row){ return sum + row.opening; }, 0);
+      var totalInbound = rows.reduce(function(sum, row){ return sum + row.inbound; }, 0);
+      var totalBefore = rows.reduce(function(sum, row){ return sum + row.before; }, 0);
+      var totalSuggest = rows.reduce(function(sum, row){ return sum + row.suggest; }, 0);
+      var totalAfter = rows.reduce(function(sum, row){ return sum + row.after; }, 0);
+      var totalAvg = rows.reduce(function(sum, row){ return sum + row.avg; }, 0);
 
       return {
-        id: sku.id,
-        name: sku.name,
-        daily: d.daily,
-        promo: d.promo,
-        stock: d.stock,
-        inbound: d.inbound,
-        demand: demand,
-        promoDemand: promoDemand,
-        avg: avg,
-        avail: avail,
-        targetEnd: targetEnd,
-        suggest: suggest,
-        end: end,
-        cover: cover,
-        currentCover: currentCover,
-        status: status
+        id: month.id,
+        days: days,
+        act: act,
+        normalDays: normalDays,
+        safety: safety,
+        autoOpening: autoOpening,
+        gapBefore: gapBefore,
+        rows: rows,
+        totalDemand: totalDemand,
+        totalPromo: totalPromo,
+        totalOpening: totalOpening,
+        totalInbound: totalInbound,
+        totalBefore: totalBefore,
+        totalSuggest: totalSuggest,
+        totalAfter: totalAfter,
+        totalAvg: totalAvg,
+        totalCover: totalAvg > 0 ? totalAfter / totalAvg : null,
+        belowSafety: rows.filter(function(row){ return row.currentCover !== null && safety > 0 && row.currentCover < safety; }).length,
+        overCount: rows.filter(function(row){ return row.status.key === 'over'; }).length,
+        restockCount: rows.filter(function(row){ return row.suggest > 0; }).length,
+        promoShare: totalDemand > 0 ? (totalPromo / totalDemand) * 100 : 0
       };
     });
+  }
 
-    var totalDemand = rows.reduce(function(sum, row){ return sum + row.demand; }, 0);
-    var totalPromo = rows.reduce(function(sum, row){ return sum + row.promoDemand; }, 0);
-    var totalSuggest = rows.reduce(function(sum, row){ return sum + row.suggest; }, 0);
-    var totalStock = rows.reduce(function(sum, row){ return sum + row.stock; }, 0);
-    var totalInbound = rows.reduce(function(sum, row){ return sum + row.inbound; }, 0);
-    var totalAvail = rows.reduce(function(sum, row){ return sum + row.avail; }, 0);
-    var totalEnd = rows.reduce(function(sum, row){ return sum + row.end; }, 0);
-    var totalAvg = rows.reduce(function(sum, row){ return sum + row.avg; }, 0);
-
-    return {
-      days: days,
-      act: act,
-      normalDays: normalDays,
-      safety: safety,
-      rows: rows,
-      totalDemand: totalDemand,
-      totalPromo: totalPromo,
-      totalSuggest: totalSuggest,
-      totalStock: totalStock,
-      totalInbound: totalInbound,
-      totalAvail: totalAvail,
-      totalEnd: totalEnd,
-      totalAvg: totalAvg,
-      totalCover: totalAvg > 0 ? totalEnd / totalAvg : null,
-      belowSafety: rows.filter(function(row){ return row.currentCover !== null && safety > 0 && row.currentCover < safety; }).length,
-      overCount: rows.filter(function(row){ return row.status.key === 'over'; }).length,
-      restockCount: rows.filter(function(row){ return row.suggest > 0; }).length,
-      promoShare: totalDemand > 0 ? (totalPromo / totalDemand) * 100 : 0
-    };
+  function calcMonth(month){
+    var all = calcAll();
+    return all.find(function(result){ return result.id === month.id; }) || all[0];
   }
 
   /* ---------- rendering ---------- */
@@ -984,16 +1042,31 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     var month = activeMonth();
     if (!month) return;
     var days = daysInMonth(month.month);
+    var first = state.months[0].id === month.id;
     els.activity.value = String(month.activityDays);
     els.activity.max = String(days);
     els.safety.value = String(month.safetyDays);
     els.deleteMonth.hidden = state.months.length <= 1;
+    els.openingToggle.hidden = first;
+    els.firstOpeningHint.hidden = !first;
+    if (!first) {
+      $$('[data-opening-mode]', els.openingToggle).forEach(function(button){
+        var active = button.dataset.openingMode === 'manual' ? month.manualOpening === true : month.manualOpening !== true;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
     var act = clampInt(month.activityDays, 0, days, 0);
     setText(els.dayHint, '本月 ' + days + ' 天 · 日常 ' + (days - act) + ' 天 / 活动 ' + act + ' 天');
   }
 
   function skuRow(sku, month){
     var d = month.data[sku.id] || zeroRow();
+    var first = state.months[0].id === month.id;
+    var manualOpening = first || month.manualOpening === true;
+    var openingCell = manualOpening
+      ? '<td><input class="num-input" data-field="stock" type="number" min="0" step="1" inputmode="numeric" value="' + esc(d.stock) + '" aria-label="期初库存"/></td>'
+      : '<td class="num opening-cell"><span class="opening-value" data-k="opening">—</span><span class="opening-src">承上</span></td>';
     return '<tr data-id="' + esc(sku.id) + '">' +
       '<td class="cell-sku">' +
         '<div class="sku-line">' +
@@ -1004,11 +1077,11 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
       '<td><input class="num-input" data-field="daily" type="number" min="0" step="0.1" inputmode="decimal" value="' + esc(d.daily) + '" aria-label="日常日销"/></td>' +
       '<td><input class="num-input" data-field="promo" type="number" min="0" step="0.1" inputmode="decimal" value="' + esc(d.promo) + '" aria-label="活动日销"/></td>' +
       '<td class="num"><span class="cell-demand" data-k="demand">—</span></td>' +
-      '<td><input class="num-input" data-field="stock" type="number" min="0" step="1" inputmode="numeric" value="' + esc(d.stock) + '" aria-label="现有库存"/></td>' +
+      openingCell +
       '<td><input class="num-input" data-field="inbound" type="number" min="0" step="1" inputmode="numeric" value="' + esc(d.inbound) + '" aria-label="在途库存"/></td>' +
-      '<td class="num"><span class="cell-avail" data-k="avail">—</span></td>' +
+      '<td class="num"><span class="cell-before" data-k="before">—</span></td>' +
       '<td class="num"><span class="cell-suggest" data-k="suggest">—</span></td>' +
-      '<td class="num"><span class="cell-end" data-k="end">—</span><span class="cover" data-k="cover">—</span></td>' +
+      '<td class="num"><span class="cell-after" data-k="after">—</span><span class="cover" data-k="cover">—</span></td>' +
       '<td class="status-cell"><span class="status none" data-k="status">—</span></td>' +
     '</tr>';
   }
@@ -1032,6 +1105,9 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
 
   function renderAlerts(result){
     var badges = [];
+    if (result.gapBefore) {
+      badges.push('<span class="alert amber" title="自动承接只能取上一已存在月份的补货后库存；中间缺失月份的销量不会被扣减"><i></i>月份不连续，期初承接会跳过中间月份</span>');
+    }
     var belowNames = result.rows.filter(function(row){
       return result.safety > 0 && row.currentCover !== null && row.currentCover < result.safety;
     }).map(function(row){ return row.name || '未命名 SKU'; }).join('、');
@@ -1080,7 +1156,7 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
 
     setText(els.sumDemand, fmt(result.totalDemand));
     setText(els.sumSuggest, fmt(result.totalSuggest));
-    setText(els.sumStock, fmt(result.totalEnd));
+    setText(els.sumStock, fmt(result.totalAfter));
     setText(els.sumPromo, fmt(result.promoShare));
 
     result.rows.forEach(function(row){
@@ -1088,11 +1164,14 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
       if (!tr) return;
       var cell = function(key){ return tr.querySelector('[data-k="' + key + '"]'); };
       setText(cell('demand'), fmt(row.demand));
-      setText(cell('avail'), fmt(row.avail));
+      setText(cell('opening'), fmt(row.opening));
+      var beforeEl = cell('before');
+      setText(beforeEl, fmt(row.before));
+      if (beforeEl) beforeEl.classList.toggle('negative', row.before < -0.0001);
       var suggestEl = cell('suggest');
       setText(suggestEl, fmt(row.suggest));
       if (suggestEl) suggestEl.classList.toggle('zero', row.suggest === 0);
-      setText(cell('end'), fmt(row.end));
+      setText(cell('after'), fmt(row.after));
       setText(cell('cover'), row.cover === null ? '—' : '可售 ' + fmtDays(row.cover));
       var statusEl = cell('status');
       if (statusEl) {
@@ -1107,11 +1186,12 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     setText(els.footCount, state.skus.length + ' 个 SKU');
     setText(els.totalAvg, fmt(result.totalAvg));
     setText(els.totalDemand, fmt(result.totalDemand));
-    setText(els.totalStock, fmt(result.totalStock));
+    setText(els.totalOpening, fmt(result.totalOpening));
     setText(els.totalInbound, fmt(result.totalInbound));
-    setText(els.totalAvail, fmt(result.totalAvail));
+    setText(els.totalBefore, fmt(result.totalBefore));
+    els.totalBefore.classList.toggle('negative', result.totalBefore < -0.0001);
     setText(els.totalSuggest, fmt(result.totalSuggest));
-    setText(els.totalEnd, fmt(result.totalEnd));
+    setText(els.totalAfter, fmt(result.totalAfter));
     setText(els.totalStatus, state.skus.length ? (result.restockCount > 0 ? result.restockCount + ' 个待补货' : '无需补货') : '—');
     els.totalStatus.classList.toggle('alert', result.restockCount > 0);
 
@@ -1123,6 +1203,7 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     if (!state.months.some(function(m){ return m.id === state.activeId; })) {
       state.activeId = state.months[0].id;
     }
+    state.months[0].manualOpening = true;
     els.spu.value = state.spu;
     renderTabs();
     renderMonthControls();
@@ -1199,14 +1280,14 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     }
 
     var snapshot = clone(state);
-    var endById = new Map(source.rows.map(function(row){ return [row.id, row.end]; }));
+    var afterById = new Map(source.rows.map(function(row){ return [row.id, row.after]; }));
     var data = {};
     state.skus.forEach(function(sku){
       var d = last.data[sku.id] || zeroRow();
       data[sku.id] = {
         daily: d.daily,
         promo: d.promo,
-        stock: Math.max(0, Math.round(endById.get(sku.id) || 0)),
+        stock: Math.max(0, Math.round(afterById.get(sku.id) || 0)),
         inbound: 0
       };
     });
@@ -1217,13 +1298,14 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
       month: next,
       activityDays: clampInt(last.activityDays, 0, daysInMonth(next), 0),
       safetyDays: last.safetyDays,
+      manualOpening: false,
       data: data
     });
     state.months.sort(function(a, b){ return a.month.localeCompare(b.month); });
     state.activeId = id;
     renderAll();
     saveNow();
-    showToast('已添加 ' + formatMonth(next) + ' · 期初库存取上月期末', function(){
+    showToast('已添加 ' + formatMonth(next) + ' · 自动承接上月补货后库存', function(){
       state = snapshot;
       renderAll();
       saveNow();
@@ -1234,6 +1316,27 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     });
   }
 
+  function setOpeningMode(mode){
+    var month = activeMonth();
+    if (!month) return;
+    if (state.months[0].id === month.id) return;
+    if (mode === 'manual') {
+      if (month.manualOpening) return;
+      var result = calcMonth(month);
+      result.rows.forEach(function(row){
+        if (month.data[row.id]) month.data[row.id].stock = round1(row.opening);
+      });
+      month.manualOpening = true;
+    } else {
+      month.manualOpening = false;
+    }
+    renderMonthControls();
+    renderTable();
+    update();
+    saveNow();
+    showToast(mode === 'manual' ? '已改为手动填写期初库存' : '已改为自动承接上月补货后库存');
+  }
+
   function deleteMonth(){
     if (state.months.length <= 1) {
       showToast('至少保留一个月');
@@ -1242,8 +1345,20 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     var index = state.months.findIndex(function(m){ return m.id === state.activeId; });
     if (index < 0) index = 0;
     var snapshot = clone(state);
+    var resultsBefore = calcAll();
     var removed = state.months[index];
     state.months.splice(index, 1);
+
+    if (index === 0) {
+      var newFirst = state.months[0];
+      newFirst.manualOpening = true;
+      if (resultsBefore[1]) {
+        resultsBefore[1].rows.forEach(function(row){
+          if (newFirst.data[row.id]) newFirst.data[row.id].stock = round1(row.opening);
+        });
+      }
+    }
+
     state.activeId = state.months[Math.max(0, index - 1)].id;
     renderAll();
     saveNow();
@@ -1320,8 +1435,8 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
     }
     var headers = [
       '月份', 'SPU', 'SKU', '日常日销', '活动日销', '月天数', '活动天数', '日常天数',
-      '月需求', '其中活动需求', '现有库存', '在途库存', '可用库存', '安全库存天数',
-      '建议备货', '期末库存', '可售天数', '占 SPU 比', '状态'
+      '月需求', '其中活动需求', '期初库存', '期初方式', '在途库存', '补货前库存', '安全库存天数',
+      '建议备货', '补货后库存', '可售天数', '占 SPU 比', '状态'
     ];
     var lines = [headers];
 
@@ -1340,12 +1455,13 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
           result.normalDays,
           round1(row.demand),
           round1(row.promoDemand),
-          row.stock,
+          round1(row.opening),
+          row.autoOpening ? '自动承接' : '手动',
           row.inbound,
-          round1(row.avail),
+          round1(row.before),
           result.safety,
           row.suggest,
-          round1(row.end),
+          round1(row.after),
           row.cover === null ? '' : round1(row.cover),
           fmtPct(share),
           row.status.label
@@ -1391,17 +1507,17 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
       rows.push('<section class="print-month">' +
         '<div class="print-month-head">' +
           '<h2>' + monthTitle(month.month) + '</h2>' +
-          '<p>活动 ' + result.act + ' 天 · 安全库存 ' + result.safety + ' 天 · 月需求 ' + fmt(result.totalDemand) + ' 件 · 建议备货 ' + fmt(result.totalSuggest) + ' 件 · 期末 ' + fmt(result.totalEnd) + ' 件</p>' +
+          '<p>活动 ' + result.act + ' 天 · 安全库存 ' + result.safety + ' 天 · 月需求 ' + fmt(result.totalDemand) + ' 件 · 期初 ' + fmt(result.totalOpening) + ' 件 · 建议备货 ' + fmt(result.totalSuggest) + ' 件 · 补货后 ' + fmt(result.totalAfter) + ' 件</p>' +
         '</div>' +
         '<table class="print-table">' +
           '<colgroup>' +
-            '<col style="width:24%"/><col style="width:8%"/><col style="width:8%"/><col style="width:9%"/>' +
-            '<col style="width:7.5%"/><col style="width:7.5%"/><col style="width:7.5%"/>' +
-            '<col style="width:10%"/><col style="width:9.5%"/><col style="width:9%"/>' +
+            '<col style="width:22.5%"/><col style="width:8%"/><col style="width:8%"/><col style="width:8.5%"/>' +
+            '<col style="width:8.5%"/><col style="width:7.5%"/><col style="width:9%"/>' +
+            '<col style="width:9.5%"/><col style="width:9.5%"/><col style="width:9%"/>' +
           '</colgroup>' +
           '<thead><tr>' +
             '<th>SKU 名称 / 编码</th><th>日常日销</th><th>活动日销</th><th>月需求</th>' +
-            '<th>现有库存</th><th>在途库存</th><th>可用库存</th><th>建议备货</th><th>期末库存</th><th>状态</th>' +
+            '<th>期初库存</th><th>在途库存</th><th>补货前库存</th><th>建议备货</th><th>补货后库存</th><th>状态</th>' +
           '</tr></thead><tbody>');
 
       if (!result.rows.length) {
@@ -1413,11 +1529,11 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
             '<td>' + fmt(row.daily) + '</td>' +
             '<td>' + fmt(row.promo) + '</td>' +
             '<td>' + fmt(row.demand) + '</td>' +
-            '<td>' + fmt(row.stock) + '</td>' +
+            '<td>' + fmt(row.opening) + (row.autoOpening ? '<span class="p-cover">自动承上</span>' : '<span class="p-cover">手动</span>') + '</td>' +
             '<td>' + fmt(row.inbound) + '</td>' +
-            '<td>' + fmt(row.avail) + '</td>' +
+            '<td class="p-before' + (row.before < -0.0001 ? ' negative' : '') + '">' + fmt(row.before) + '</td>' +
             '<td class="p-suggest' + (row.suggest === 0 ? ' p-zero' : '') + '">' + fmt(row.suggest) + '</td>' +
-            '<td>' + fmt(row.end) + '<span class="p-cover">' + (row.cover === null ? '' : '可售 ' + fmtDays(row.cover)) + '</span></td>' +
+            '<td>' + fmt(row.after) + '<span class="p-cover">' + (row.cover === null ? '' : '可售 ' + fmtDays(row.cover)) + '</span></td>' +
             '<td>' + row.status.label + '</td>' +
           '</tr>');
         });
@@ -1425,11 +1541,11 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
           '<td>合计</td>' +
           '<td colspan="2" class="p-avg">总日均 ' + fmt(result.totalAvg) + ' 件/天</td>' +
           '<td>' + fmt(result.totalDemand) + '</td>' +
-          '<td>' + fmt(result.totalStock) + '</td>' +
+          '<td>' + fmt(result.totalOpening) + '</td>' +
           '<td>' + fmt(result.totalInbound) + '</td>' +
-          '<td>' + fmt(result.totalAvail) + '</td>' +
+          '<td class="p-before' + (result.totalBefore < -0.0001 ? ' negative' : '') + '">' + fmt(result.totalBefore) + '</td>' +
           '<td class="p-suggest">' + fmt(result.totalSuggest) + '</td>' +
-          '<td>' + fmt(result.totalEnd) + '</td>' +
+          '<td>' + fmt(result.totalAfter) + '</td>' +
           '<td>' + (result.restockCount ? result.restockCount + ' 个待补货' : '—') + '</td>' +
         '</tr>');
       }
@@ -1547,6 +1663,11 @@ tfoot td.foot-avg{text-align:center;white-space:nowrap}
   });
 
   document.addEventListener('click', function(event){
+    var openingBtn = event.target.closest('[data-opening-mode]');
+    if (openingBtn) {
+      setOpeningMode(openingBtn.dataset.openingMode);
+      return;
+    }
     var addMonthBtn = event.target.closest('[data-add-month]');
     if (addMonthBtn) {
       addMonth();
