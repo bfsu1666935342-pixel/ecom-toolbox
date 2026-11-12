@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>亚马逊类目调研 · Category Insight</title>
+<meta name="description" content="三份亚马逊类目调研报告：Gaming Chair、Criss Cross Office Chair、Drafting Chair。按需求、竞争、产品、单位经济、供应链五层拆解。">
+<meta name="theme-color" content="#0f1216">
+<style>
+  :root{--bg:#0f1216;--card:#171b21;--card2:#1e242c;--line:#2b333d;--txt:#e8edf3;
+        --dim:#8b97a6;--green:#31c48d;--amber:#f0a93b;--blue:#4c9aff;--red:#f05252;
+        --serif:"Iowan Old Style","Palatino Linotype",Georgia,"Songti SC","SimSun",serif}
+  *{box-sizing:border-box}
+  body{margin:0;padding:38px 20px 60px;background:var(--bg);color:var(--txt);
+    font:14.5px/1.65 -apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto}
+  a{color:inherit}
+  header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:26px}
+  .brand{display:flex;gap:14px;align-items:flex-start}
+  .logo{width:48px;height:48px;flex:0 0 48px;border-radius:13px;display:grid;place-items:center;
+    background:linear-gradient(145deg,#1f2a38,#141a21);border:1px solid var(--line);font-size:23px}
+  h1{margin:0;font-size:27px;font-weight:680;letter-spacing:.2px}
+  h1 .en{color:var(--dim);font-size:14px;font-weight:500;margin-left:8px;letter-spacing:.4px}
+  .sub{color:var(--dim);font-size:13.5px;margin:7px 0 0;max-width:620px}
+  .stats{display:flex;gap:8px;flex-wrap:wrap;padding-top:5px}
+  .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:12px;color:var(--dim)}
+  .chip b{color:var(--txt);font-weight:650}
+  .notice{border:1px solid #4a3a1a;background:#1d1810;border-radius:10px;padding:11px 14px;
+    color:#c8b28a;font-size:12px;line-height:1.7;margin-bottom:22px}
+  .notice b{color:#f0c27a}
+
+  .reports{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:900px){.reports{grid-template-columns:1fr}}
+  .report{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+    display:flex;flex-direction:column;min-width:0;transition:border-color .18s,transform .18s}
+  .report:hover{border-color:#3d5b86;transform:translateY(-2px)}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+  .ico{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:19px;
+    background:var(--card2);border:1px solid var(--line)}
+  .badge{font-size:10px;font-weight:650;border-radius:999px;padding:3px 8px;white-space:nowrap;
+    background:#331513;border:1px solid #5b2420;color:#f29b91}
+  .badge.warn{background:#332813;border-color:#4a3a1a;color:#f0c27a}
+  .badge.green{background:#16351f;border-color:#1d4a2c;color:#8fe0b8}
+  .report h2{margin:0 0 7px;font-size:18px;font-weight:650;letter-spacing:-.1px}
+  .report .en{display:block;color:var(--dim);font-size:10px;font-weight:500;letter-spacing:.08em;margin-top:2px}
+  .report p{margin:0;color:var(--dim);font-size:12.5px;line-height:1.7;flex:1}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:13px 0 0}
+  .metric{background:var(--card2);border:1px solid var(--line);border-radius:7px;padding:7px 8px}
+  .metric span{display:block;font-size:9px;color:var(--dim)}
+  .metric b{display:block;font-size:13px;font-weight:650;margin-top:1px;font-variant-numeric:tabular-nums}
+  .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}
+  .tags span{font-size:10px;color:#93a1b1;background:var(--card2);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+  .actions{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .open{font-size:12px;font-weight:600;color:var(--blue);text-decoration:none}
+  .open::after{content:" →"}
+  .data{font-size:10.5px;color:var(--dim);text-decoration:none}
+  .data:hover{color:var(--txt)}
+
+  .method{margin-top:26px;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:18px 20px}
+  .method h2{margin:0 0 9px;font-size:14px;font-weight:650}
+  .steps{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+  @media(max-width:800px){.steps{grid-template-columns:1fr 1fr}}
+  .step{border-left:2px solid #2f6b8a;padding-left:9px}
+  .step b{display:block;font-size:11px;color:#b9d4e3}
+  .step span{display:block;font-size:10.5px;color:var(--dim);margin-top:2px;line-height:1.55}
+  footer{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);
+    font-size:11.5px;line-height:1.8;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  footer a{color:var(--dim);text-decoration:none;border-bottom:1px solid #2f3945}
+  footer a:hover{color:var(--blue);border-color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">🔬</div>
+      <div>
+        <h1>亚马逊类目调研<span class="en">Category Insight</span></h1>
+        <p class="sub">不把“类目大”直接当成“值得做”。按需求质量、竞争结构、产品空位、单位经济、供应链门槛五层拆，最后给 Go / No-Go。</p>
+      </div>
+    </div>
+    <div class="stats">
+      <span class="chip"><b>3</b> 份报告</span>
+      <span class="chip"><b>2</b> No-Go</span>
+      <span class="chip"><b>1</b> 有条件</span>
+      <span class="chip">Sorftime MCP</span>
+    </div>
+  </header>
+
+  <div class="notice">
+    <b>数据口径：</b>三份报告均由 Sorftime MCP 实拉 Amazon US 数据（2026-11-12），包含类目 / 关键词趋势 / Top100 / 商品详情 / 评论摘要。<b>Sorftime 为第三方估算，不是 Amazon 官方</b>；成本、FBA、广告、供应链为假设，报告只用于方向判断，不构成投资建议。页面不含 API key。
+  </div>
+
+  <div class="reports">
+    <article class="report">
+      <div class="top"><span class="ico">📐</span><span class="badge">No-Go · 40/100</span></div>
+      <h2>Drafting Chair<span class="en">DRAFTING CHAIRS · NODE 1069142</span></h2>
+      <p>搜索还在，成交额在缩；$129 的成交价撑不起 $3.88 的 CPC，广告单均 $90.65，单位经济直接为负。</p>
+      <div class="metrics">
+        <div class="metric"><span>2026-10 销量</span><b>27,188</b></div>
+        <div class="metric"><span>同比</span><b>-35.5%</b></div>
+        <div class="metric"><span>CPC</span><b>$3.88</b></div>
+        <div class="metric"><span>$129 毛利率</span><b>-54.9%</b></div>
+      </div>
+      <div class="tags"><span>官方类目</span><span>Top100</span><span>高 CPC</span><span>No-Go</span></div>
+      <div class="actions">
+        <a class="open" href="drafting-chair/">打开报告</a>
+        <a class="data" href="data/drafting-chair-top100.csv">Top100 CSV</a>
+      </div>
+    </article>
+
+    <article class="report">
+      <div class="top"><span class="ico">🪑</span><span class="badge warn">有条件 · 69/100</span></div>
+      <h2>Criss Cross Office Chair<span class="en">CROSS-LEGGED / WIDE SEAT</span></h2>
+      <p>主词 17.8 万/月、同比 +68.1%，评论墙低；但 $199 只有 7.2%，只做 $229–249 的宽座/大体重款。</p>
+      <div class="metrics">
+        <div class="metric"><span>主词月搜索</span><b>177,750</b></div>
+        <div class="metric"><span>同比</span><b>+68.1%</b></div>
+        <div class="metric"><span>$229 毛利率</span><b>17.2%</b></div>
+        <div class="metric"><span>建议价格带</span><b>$229–249</b></div>
+      </div>
+      <div class="tags"><span>关键词细分</span><span>17 ASIN 样本</span><span>低评论墙</span><span>小批量测试</span></div>
+      <div class="actions">
+        <a class="open" href="criss-cross-chair/">打开报告</a>
+        <a class="data" href="data/criss-cross-sample.csv">17 ASIN CSV</a>
+      </div>
+    </article>
+
+    <article class="report">
+      <div class="top"><span class="ico">🎮</span><span class="badge">No-Go · 41/100</span></div>
+      <h2>Gaming Chair<span class="en">VIDEO GAME CHAIRS · NODE 668180011</span></h2>
+      <p>需求同比 -21.5%，TOP3 46.7%、Amazon 39.5%；低价带 FBA+广告后不成立，只有 Big &amp; Tall 还在增长。</p>
+      <div class="metrics">
+        <div class="metric"><span>2026-10 销量</span><b>78,570</b></div>
+        <div class="metric"><span>同比</span><b>-21.5%</b></div>
+        <div class="metric"><span>TOP3 份额</span><b>46.7%</b></div>
+        <div class="metric"><span>$229 毛利率</span><b>12.4%</b></div>
+      </div>
+      <div class="tags"><span>官方类目</span><span>Top100</span><span>Amazon 39.5%</span><span>No-Go</span></div>
+      <div class="actions">
+        <a class="open" href="gaming-chair/">打开报告</a>
+        <a class="data" href="data/gaming-chair-top100.csv">Top100 CSV</a>
+      </div>
+    </article>
+  </div>
+
+  <section class="method">
+    <h2>统一方法：五个问题，一条决策链</h2>
+    <div class="steps">
+      <div class="step"><b>01 需求</b><span>规模、同比、季节、搜索与成交是否同向。</span></div>
+      <div class="step"><b>02 竞争</b><span>TOP3、Amazon 自营、评论墙、内容是否饱和。</span></div>
+      <div class="step"><b>03 产品</b><span>价格带、配置、差评主题、还有没有结构空位。</span></div>
+      <div class="step"><b>04 经济</b><span>售价 − landed − 佣金 − FBA − 广告 − 退货，是否为正。</span></div>
+      <div class="step"><b>05 供应链</b><span>MOQ、交期、包装、认证、专利、质保能不能兜住。</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Sorftime MCP 实拉 2026-11-12 · Amazon US · 第三方估算，非 Amazon 官方 · 不构成投资建议</span>
+    <span><a href="../../">← 返回工具箱</a> · <a href="https://github.com/bfsu1666935342-pixel/ecom-toolbox">GitHub</a></span>
+  </footer>
+</div>
+</body>
+</html>

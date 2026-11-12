@@ -1,0 +1,1800 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Criss Cross Office Chair 细分分析 · v0.3</title>
+<style>
+:root{
+  --bg:#f2efe7;
+  --paper:#fffdf8;
+  --paper-2:#faf7ef;
+  --ink:#1d1b17;
+  --ink-2:#575248;
+  --muted:#7d7669;
+  --muted-2:#9c9587;
+  --line:#e5dfd2;
+  --line-2:#d4ccbd;
+  --accent:#b5451b;
+  --accent-2:#8f3514;
+  --accent-soft:#f8e9df;
+  --green:#2f6b4f;
+  --green-soft:#eaf3ed;
+  --red:#a92b20;
+  --red-soft:#faecea;
+  --amber:#946119;
+  --amber-soft:#fbf2df;
+  --blue:#3f6288;
+  --blue-soft:#edf2f8;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Georgia,"Songti SC","STSong","SimSun",serif;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:13px/1.65 var(--sans);-webkit-font-smoothing:antialiased;
+}
+button,input{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+::selection{background:rgba(181,69,27,.18)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 24px}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+.site-head{
+  position:sticky;top:0;z-index:50;
+  background:rgba(242,239,231,.9);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.head-in{height:62px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{
+  width:30px;height:30px;border-radius:8px;background:var(--ink);color:#fbf7ec;
+  display:grid;place-items:center;font-family:var(--serif);font-size:16px;line-height:1;flex:0 0 30px;
+}
+.brand-name{font-size:13px;font-weight:700;letter-spacing:.01em;line-height:1.2}
+.brand-sub{font-size:8px;letter-spacing:.18em;color:var(--muted-2);font-weight:650;line-height:1.4}
+.head-actions{display:flex;align-items:center;gap:7px}
+.btn{
+  display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;
+  border:1px solid var(--line-2);border-radius:7px;background:var(--paper);
+  color:var(--ink-2);font-size:11px;font-weight:500;white-space:nowrap;transition:.14s;
+}
+.btn:hover{border-color:#b9ae9c;color:var(--ink);background:#fff}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fbf7ec}
+.btn.primary:hover{background:#2b2821;border-color:#2b2821;color:#fff}
+.btn.sm{height:28px;font-size:10.5px;padding:0 9px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;padding:26px 2px 0}
+.hero-main{padding:4px 0 8px;min-width:0}
+.eyebrow{font-size:9px;letter-spacing:.16em;color:var(--muted-2);font-weight:700;margin-bottom:4px}
+h1{
+  margin:0;font-family:var(--serif);font-size:46px;line-height:1.05;
+  letter-spacing:-.03em;font-weight:600;color:var(--ink);
+}
+h1 .cn{font-family:var(--sans);font-size:23px;font-weight:650;letter-spacing:.01em;color:var(--ink-2);margin-left:8px}
+.hero-sub{max-width:680px;margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.75}
+.hero-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tag{
+  display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;
+  background:var(--paper-2);border:1px solid var(--line);color:var(--muted);font-size:9.5px;white-space:nowrap;
+}
+.tag.warn{background:var(--amber-soft);border-color:#ecd7ad;color:var(--amber)}
+.tag.demo{background:var(--red-soft);border-color:#efcbc6;color:var(--red)}
+
+.verdict-card{
+  position:relative;overflow:hidden;background:linear-gradient(150deg,#25221b,#171612);
+  border-radius:14px;padding:18px 18px 16px;color:#f8f3e7;
+  box-shadow:0 10px 30px rgba(29,27,23,.12);
+}
+.verdict-card::after{
+  content:"";position:absolute;width:150px;height:150px;right:-60px;top:-65px;border-radius:50%;
+  background:radial-gradient(circle,rgba(214,105,52,.4),transparent 68%);
+}
+.verdict-label{font-size:8.5px;letter-spacing:.13em;color:#b9b09f;font-weight:650}
+.verdict-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:4px;position:relative;z-index:1}
+.verdict{font-size:26px;font-weight:650;line-height:1.15;letter-spacing:-.02em;color:#fbf7ec}
+.verdict.amber{color:#f0bc73}
+.verdict.red{color:#f09a8f}
+.verdict.green{color:#8fd3ad}
+.score{font-size:30px;font-weight:700;line-height:1;letter-spacing:-.03em;color:#fbf7ec}
+.score small{font-size:10px;color:#a9a08f;font-weight:500;margin-left:1px;letter-spacing:0}
+.verdict-reason{margin:10px 0 0;font-size:10.5px;line-height:1.7;color:#bdb4a3;position:relative;z-index:1}
+.verdict-mini{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;position:relative;z-index:1}
+.verdict-mini span{font-size:8.5px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);border-radius:99px;padding:2px 7px;color:#d8cfbe}
+
+/* demo banner */
+.demo-banner{
+  margin:12px 0 0;display:flex;align-items:flex-start;gap:8px;
+  background:#fff8e8;border:1px solid #eedcae;border-radius:8px;
+  padding:8px 11px;color:#7b5a20;font-size:10px;line-height:1.6;
+}
+.demo-banner b{color:#8f5b12;font-weight:700}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 13px;min-width:0}
+.kpi-label{font-size:9px;letter-spacing:.06em;color:var(--muted-2);font-weight:650;white-space:nowrap}
+.kpi-value{display:flex;align-items:baseline;gap:4px;margin-top:3px;font-size:23px;font-weight:650;line-height:1.15;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kpi-value small{font-size:9px;color:var(--muted-2);font-weight:500}
+.kpi-sub{font-size:9.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.alert .kpi-value{color:var(--red)}
+
+/* tabs */
+.tabs{
+  position:sticky;top:62px;z-index:40;
+  display:flex;gap:2px;overflow-x:auto;margin-top:16px;padding:4px;
+  background:#e9e4d8;border:1px solid #ded7c8;border-radius:9px;
+  scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;height:32px;padding:0 12px;border:0;border-radius:6px;background:transparent;
+  color:var(--muted);font-size:10.5px;font-weight:600;white-space:nowrap;transition:.14s;
+}
+.tab:hover{color:var(--ink)}
+.tab.active{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(29,27,23,.08)}
+
+/* panels */
+.panel{display:none;padding:16px 0 34px}
+.panel.active{display:block}
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:15px 16px;min-width:0}
+.card.flat{padding:0;overflow:hidden}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.card-head h2{margin:0;font-size:12.5px;font-weight:650;letter-spacing:.01em}
+.card-head p{margin:2px 0 0;font-size:9.5px;color:var(--muted-2);line-height:1.55}
+.card-kicker{font-size:8px;letter-spacing:.12em;color:var(--muted-2);font-weight:700;margin-bottom:3px}
+.card-note{font-size:9.5px;color:var(--muted-2);line-height:1.65;margin-top:8px}
+.divider{height:1px;background:var(--line);margin:12px 0}
+
+/* callout */
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:9px 11px;border-radius:0 6px 6px 0;font-size:11px;line-height:1.75;color:var(--ink-2);margin-top:10px}
+.callout b{color:var(--ink)}
+.callout.green{border-left-color:var(--green);background:var(--green-soft)}
+.callout.amber{border-left-color:#c69a49;background:var(--amber-soft)}
+.callout.red{border-left-color:var(--red);background:var(--red-soft)}
+.callout .label{display:block;font-size:8.5px;letter-spacing:.1em;font-weight:700;color:var(--muted-2);margin-bottom:2px}
+
+/* charts */
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.chart text{font-family:var(--sans);fill:var(--muted-2);font-size:9px}
+.chart .grid{stroke:#eee8dc;stroke-width:1}
+.chart .axis{stroke:#d8d0c0;stroke-width:1}
+.chart .area{fill:rgba(181,69,27,.08)}
+.chart .line{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.chart .line.rev{stroke:#b3a48e;stroke-width:1.6;stroke-dasharray:4 4}
+.chart .dot{fill:var(--paper);stroke:var(--accent);stroke-width:2}
+.chart .peak{fill:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:9.5px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:4px;background:var(--accent)}
+.legend i.sand{background:#d8c8b0}
+.legend i.ink{background:var(--ink-2)}
+
+/* bars */
+.bar-row{display:grid;grid-template-columns:92px minmax(0,1fr) 92px;align-items:center;gap:8px;margin-bottom:8px}
+.bar-name{font-size:10px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{height:7px;background:#f0ebe0;border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);border-radius:99px}
+.bar-fill.sand{background:#d4c3ab}
+.bar-fill.green{background:var(--green)}
+.bar-fill.amber{background:#c69a49}
+.bar-fill.red{background:var(--red)}
+.bar-val{text-align:right;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bar-val b{color:var(--ink);font-weight:650}
+
+/* tables */
+.table-wrap{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;min-width:520px}
+th{
+  padding:7px 8px;background:var(--paper-2);border-bottom:1px solid var(--line);
+  font-size:8.5px;letter-spacing:.04em;color:var(--muted-2);font-weight:650;text-align:right;white-space:nowrap;
+}
+th:first-child{text-align:left;padding-left:10px}
+td{padding:8px;border-bottom:1px solid #f0ece2;font-size:10.5px;text-align:right;vertical-align:top;font-variant-numeric:tabular-nums;white-space:nowrap}
+td:first-child{text-align:left;padding-left:10px;white-space:normal;min-width:130px}
+tr:last-child td{border-bottom:0}
+tr:hover td{background:#fcfaf4}
+.td-strong{font-weight:650;color:var(--ink)}
+.td-muted{color:var(--muted-2)}
+.td-green{color:var(--green);font-weight:650}
+.td-red{color:var(--red);font-weight:650}
+.td-amber{color:var(--amber);font-weight:650}
+.tiny{font-size:8.5px;color:var(--muted-2);font-weight:400;white-space:normal}
+
+/* gates */
+.gate-table{width:100%;border-collapse:collapse;min-width:0}
+.gate-table td{padding:8px 4px;border-bottom:1px solid #f0ece2;font-size:10.5px;white-space:normal}
+.gate-table td:nth-child(2){text-align:left;padding-left:10px;padding-right:10px}
+.gate-table td:first-child{width:74px;padding-left:0;font-weight:650;color:var(--ink)}
+.gate-table td:last-child{width:58px;text-align:right}
+.gate-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;font-size:8.5px;font-weight:650;white-space:nowrap}
+.gate-pill.pass{background:var(--green-soft);color:var(--green)}
+.gate-pill.warn{background:var(--amber-soft);color:var(--amber)}
+.gate-pill.fail{background:var(--red-soft);color:var(--red)}
+.gate-pill.unknown{background:#f0ece2;color:var(--muted)}
+.gate-pill::before{content:"";width:4px;height:4px;border-radius:50%;background:currentColor}
+.gate-text{font-size:9.5px;color:var(--muted);line-height:1.55}
+
+/* score */
+.score-row{display:grid;grid-template-columns:78px minmax(0,1fr) 34px;gap:8px;align-items:center;margin-bottom:9px}
+.score-name{font-size:10px;color:var(--ink-2)}
+.score-track{height:7px;border-radius:99px;background:#f0ebe0;overflow:hidden}
+.score-fill{height:100%;border-radius:99px;background:var(--ink-2)}
+.score-fill.high{background:var(--green)}
+.score-fill.mid{background:#c69a49}
+.score-fill.low{background:var(--red)}
+.score-num{font-size:10px;text-align:right;color:var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+
+/* inputs */
+.input-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.field label{display:block;font-size:8.5px;letter-spacing:.05em;color:var(--muted-2);font-weight:650;margin-bottom:3px}
+.input-wrap{display:flex;align-items:center;background:var(--paper-2);border:1px solid transparent;border-radius:6px;height:32px;padding:0 8px;transition:.14s}
+.input-wrap:focus-within{background:#fff;border-color:#d5a28b;box-shadow:0 0 0 3px rgba(181,69,27,.08)}
+.input-wrap .prefix,.input-wrap .suffix{font-size:10px;color:var(--muted-2);flex:0 0 auto}
+.input-wrap input{width:100%;border:0;background:transparent;text-align:right;font-size:12px;font-weight:650;font-variant-numeric:tabular-nums;outline:none;min-width:0}
+.input-wrap input::-webkit-inner-spin-button{opacity:.35}
+
+/* econ */
+.econ-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.econ-metric{background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:8px 9px}
+.econ-metric span{display:block;font-size:8.5px;color:var(--muted-2);font-weight:600}
+.econ-metric b{display:block;margin-top:2px;font-size:16px;font-weight:650;line-height:1.2;font-variant-numeric:tabular-nums}
+.econ-metric b.red{color:var(--red)}
+.econ-metric b.green{color:var(--green)}
+.econ-metric b.amber{color:var(--amber)}
+
+.cost-bar{display:flex;width:100%;height:24px;border-radius:6px;overflow:hidden;background:#f1ece2;margin:12px 0 8px}
+.cost-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.cost-seg.landed{background:#5d5548}
+.cost-seg.referral{background:#8d8272}
+.cost-seg.fba{background:#b3a48e}
+.cost-seg.ad{background:#c77b52}
+.cost-seg.return{background:#d9a085}
+.cost-seg.overhead{background:#d8c8b0;color:#5d5548}
+.cost-seg.profit{background:var(--green)}
+.cost-seg.loss{background:var(--red)}
+.cost-legend{display:flex;flex-wrap:wrap;gap:8px 12px;font-size:8.5px;color:var(--muted)}
+.cost-legend span{display:inline-flex;align-items:center;gap:4px}
+.cost-legend i{width:7px;height:7px;border-radius:2px;display:inline-block}
+
+/* product table */
+.product-table{min-width:760px}
+.product-table td:first-child{min-width:170px}
+.brand-mark{font-weight:700;color:var(--ink)}
+.pill{display:inline-block;padding:1px 5px;border-radius:4px;background:#f0ece2;color:var(--muted);font-size:8px;margin:0 1px;white-space:nowrap}
+.pill.hot{background:var(--accent-soft);color:var(--accent-2)}
+.pill.green{background:var(--green-soft);color:var(--green)}
+.pill.blue{background:var(--blue-soft);color:var(--blue)}
+
+/* concepts */
+.concept{border:1px solid var(--line);border-radius:9px;padding:11px 12px;background:var(--paper-2);position:relative}
+.concept.recommend{border-color:#d9a58f;background:#fffaf5;box-shadow:inset 0 0 0 1px rgba(181,69,27,.05)}
+.concept-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.concept-key{font-size:9px;font-weight:700;color:var(--muted-2);letter-spacing:.08em}
+.concept h3{margin:2px 0 0;font-size:12.5px;font-weight:650;line-height:1.35}
+.concept-price{font-size:13px;font-weight:700;color:var(--accent-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.concept p{margin:7px 0 0;font-size:9.5px;line-height:1.65;color:var(--muted)}
+.concept .rec{display:inline-block;margin-top:8px;font-size:8.5px;font-weight:650;color:var(--green)}
+.concept ul{margin:7px 0 0;padding-left:14px;font-size:9.5px;line-height:1.65;color:var(--ink-2)}
+.concept li{margin:0 0 2px}
+
+/* data request */
+.req-table{width:100%;border-collapse:collapse;min-width:0}
+.req-table td{padding:8px 4px;border-bottom:1px solid #f0ece2;font-size:10px;white-space:normal;vertical-align:top;text-align:left}
+.req-table td:first-child{width:44px;min-width:44px;padding-left:0;font-weight:700;color:var(--accent-2)}
+.req-table td:nth-child(2){text-align:left!important}
+.req-table td:last-child{width:78px;text-align:right;color:var(--muted-2);font-size:8.5px}
+.req-desc{text-align:left}.req-table b{color:var(--ink);font-weight:650}
+.data-gaps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;margin-top:8px}
+.gap-item{display:flex;align-items:flex-start;gap:6px;font-size:9.5px;color:var(--muted);line-height:1.55}
+.gap-item i{width:5px;height:5px;border-radius:50%;background:var(--red);flex:0 0 5px;margin-top:5px}
+.gap-item.done i{background:var(--green)}
+.gap-item b{color:var(--ink-2);font-weight:600}
+
+/* footer */
+.page-foot{border-top:1px solid var(--line);margin-top:4px;padding:14px 2px 36px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:9px;color:var(--muted-2);line-height:1.7}
+.page-foot b{color:var(--ink-2);font-weight:650}
+.page-foot .right{text-align:right}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:20px;transform:translate(-50%,10px);opacity:0;pointer-events:none;
+  background:#211f1a;color:#f8f4e9;border-radius:8px;padding:8px 13px;font-size:10.5px;z-index:100;
+  transition:.18s;box-shadow:0 10px 26px rgba(0,0,0,.2);
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* responsive */
+@media(max-width:1050px){
+  .hero{grid-template-columns:1fr}
+  .verdict-card{max-width:none}
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .wrap{padding:0 16px}
+  .head-in{height:56px}
+  .brand-sub{display:none}
+  h1{font-size:34px}
+  h1 .cn{display:block;font-size:18px;margin:4px 0 0}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi:last-child{grid-column:1/-1}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .tabs{top:56px}
+  .econ-metrics{grid-template-columns:1fr}
+  .data-gaps{grid-template-columns:1fr}
+  .bar-row{grid-template-columns:78px minmax(0,1fr) 82px}
+  .page-foot{direction:ltr}
+  .page-foot .right{text-align:left}
+}
+@media(max-width:430px){
+  .head-actions .btn .txt{display:none}
+  .hero{padding-top:18px}
+  h1{font-size:30px}
+  .verdict{font-size:22px}
+  .score{font-size:26px}
+  .kpi-value{font-size:20px}
+}
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body{background:#fff}
+  .site-head,.tabs,.head-actions,.demo-banner,.toast{display:none!important}
+  .panel{display:block!important;padding:8px 0}
+  .wrap{max-width:none;padding:0}
+  .hero{grid-template-columns:1fr 300px;padding-top:0}
+  .card,.kpi{break-inside:avoid;box-shadow:none}
+  .verdict-card{background:#f2efe7!important;color:#111!important}
+  .verdict-card .verdict,.verdict-card .score{color:#111!important}
+  .verdict-card .verdict-label,.verdict-reason,.verdict-mini span{color:#555!important}
+  .chart{max-height:230px}
+}
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap head-in">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">析</span>
+      <div>
+        <div class="brand-name">CATEGORY LAB · 类目分析</div>
+        <div class="brand-sub">SORFTIME MCP · CRISS CROSS OFFICE · V0.3</div>
+      </div>
+    </div>
+    <div class="head-actions">
+      <button class="btn sm" type="button" id="resetBtn" title="恢复默认输入">重置输入</button>
+      <button class="btn sm" type="button" id="printBtn" title="打印全部内容">打印 / PDF</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero" aria-label="类目结论">
+    <div class="hero-main">
+      <div class="eyebrow">AMAZON US · CRISS CROSS OFFICE CHAIR · SORFTIME MCP</div>
+      <h1>Criss Cross Office Chair<span class="cn">细分分析</span></h1>
+      <p class="hero-sub">按「搜索需求 → 竞争结构 → 产品空位 → 单位经济 → 供应链门槛」拆解。这个品不是官方类目，而是关键词细分：Sorftime MCP 拉取 Amazon US「criss cross office chair」，17 个 ASIN 样本 + Top10 详情，2026-11-12。</p>
+      <div class="hero-tags">
+        <span class="tag">SORFTIME MCP · 实拉</span>
+        <span class="tag">关键词定义细分</span>
+        <span class="tag">17 ASIN 样本</span>
+        <span class="tag">10 / 14 数据模块</span>
+        <span class="tag warn">成本 / 供应链待补</span>
+      </div>
+    </div>
+
+    <aside class="verdict-card" aria-label="当前判断">
+      <div class="verdict-label">CURRENT VERDICT · 细分判断</div>
+      <div class="verdict-row">
+        <div class="verdict amber" id="verdictText">有条件进入</div>
+        <div class="score"><span id="scoreValue">69</span><small>/100</small></div>
+      </div>
+      <p class="verdict-reason" id="verdictReason">criss cross office chair 17.8 万/月、同比 +68.1%；TOP3 点击 27.5%、首页低评论 100%。但 $229 毛利 17.2%，$199 仅 7.2%，供应链未验证。</p>
+      <div class="verdict-mini">
+        <span>需求 75</span><span>竞争 68</span><span>经济 <b id="miniEcon">65</b></span><span>供应链 45</span>
+      </div>
+    </aside>
+  </section>
+
+  <div class="demo-banner" style="background:#edf4ef;border-color:#cfe0d5;color:#315a44">
+    <span>●</span>
+    <span><b>数据口径：</b>Sorftime MCP 实拉（2026-11-12）· 主词 criss cross office chair · 17 个 ASIN 样本 + Top10 详情。不是官方类目，搜索/销量为第三方估算；成本/供应链仍为假设。</span>
+  </div>
+
+  <section class="kpis" aria-label="核心指标">
+    <div class="kpi">
+      <div class="kpi-label">主词月搜索量</div>
+      <div class="kpi-value"><span id="kpiSales">177,750</span><small>次</small></div>
+      <div class="kpi-sub">criss cross office chair · 30 天</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">样本月销售额</div>
+      <div class="kpi-value"><span id="kpiRevenue">$3.23M</span></div>
+      <div class="kpi-sub">17 ASIN 样本 · 30 天</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">搜索同比</div>
+      <div class="kpi-value"><span id="kpiYoY">+68.1%</span></div>
+      <div class="kpi-sub">2026-10 vs 2025-10</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">TOP3 销量份额</div>
+      <div class="kpi-value"><span id="kpiCr10">44.3%</span></div>
+      <div class="kpi-sub">样本 Amazon Buy Box 35.3%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">$229 单位贡献</div>
+      <div class="kpi-value"><span id="kpiContribution">$39.4</span></div>
+      <div class="kpi-sub">毛利率 <span id="kpiMargin">17.2%</span> · 假设 landed $55</div>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="分析模块">
+    <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="overview">01 总览与门槛</button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-tab="demand">02 需求质量</button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-tab="competition">03 竞争结构</button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-tab="product">04 产品与价格空位</button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-tab="economics">05 单位经济</button>
+    <button class="tab" type="button" role="tab" aria-selected="false" data-tab="data">06 数据与下一步</button>
+  </nav>
+
+  <!-- 01 OVERVIEW -->
+  <section class="panel active" data-panel="overview" role="tabpanel">
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">GO / NO-GO</div><h2>硬门槛先于评分</h2><p>任何一项 hard fail，都不应该被加权平均“救回来”。</p></div>
+        </div>
+        <table class="gate-table" aria-label="准入门槛">
+          <tbody id="gateBody"></tbody>
+        </table>
+        <div class="callout amber" id="gateCallout" style="margin-top:10px"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">WEIGHTED SCORE</div><h2>综合评分 · 实测</h2><p>权重只是决策辅助，硬门槛优先。</p></div>
+        </div>
+        <div id="scoreBars"></div>
+        <div class="divider"></div>
+        <div class="score-row" style="grid-template-columns:78px minmax(0,1fr) 46px">
+          <span class="score-name"><b>综合</b></span>
+          <div class="score-track"><div class="score-fill mid" id="totalScoreFill" style="width:69%"></div></div>
+          <span class="score-num" id="totalScoreNum">69</span>
+        </div>
+        <p class="card-note">需求 30% · 竞争 25% · 经济 25% · 差异化 10% · 供应链 5% · 内容 5%。需求/竞争 pass、经济 warn；供应链未验证，所以最高只能到“有条件进入”。</p>
+      </section>
+    </div>
+
+    <div class="grid-3" style="margin-top:12px">
+      <section class="card">
+        <div class="card-kicker">WHAT WORKS</div>
+        <h2 style="margin:0 0 6px;font-size:12.5px">值得做的信号</h2>
+        <ul class="concept-list" style="margin:0;padding-left:16px;font-size:10px;line-height:1.75;color:var(--ink-2)">
+          <li>criss cross office chair 17.8 万/月，同比 +68.1%，不是小词。</li>
+          <li>TOP3 点击 27.5%，首页低评论占比 100%，评论墙低。</li>
+          <li>$190+ 只有 3 个 ASIN，却拿 32.3% 销售额；宽座/大体重有溢价。</li>
+          <li>wide seat office chair 搜索 +102.5%，是相邻增长词。</li>
+        </ul>
+      </section>
+      <section class="card">
+        <div class="card-kicker">WHAT KILLS IT</div>
+        <h2 style="margin:0 0 6px;font-size:12.5px">主要风险</h2>
+        <ul class="concept-list" style="margin:0;padding-left:16px;font-size:10px;line-height:1.75;color:var(--ink-2)">
+          <li>搜索大但转化率只有 1.98%；$199 毛利 7.2%，$229 也只有 17.2%。</li>
+          <li><$70 占 62.4% 销量，TOP3 都是 $60–70，Buy Box 是 Amazon。</li>
+          <li>$60–70 标品：FBA $29–34 + 广告 $53，3P 结构性亏损。</li>
+          <li>差评集中在稳定性/晃动、结构/耐用、腰背支撑；产品做不好就是退货。</li>
+        </ul>
+      </section>
+      <section class="card">
+        <div class="card-kicker">NEXT DECISION</div>
+        <h2 style="margin:0 0 6px;font-size:12.5px">如果一定要做</h2>
+        <ol class="concept-list" style="margin:0;padding-left:16px;font-size:10px;line-height:1.75;color:var(--ink-2)">
+          <li>只做 $229–249 宽座/盘腿/大体重，不做 $60–70 标品。</li>
+          <li>拿供应商报价：FOB/landed、包装、FBA、BIFMA、轮子/底盘测试。</li>
+          <li>先做 300–500 件，验证 3 个月；广告按 $1.05 CPC / 1.98% CVR 算。</li>
+        </ol>
+      </section>
+    </div>
+  </section>
+
+  <!-- 02 DEMAND -->
+  <section class="panel" data-panel="demand" role="tabpanel">
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">MARKET SIZE</div><h2>核心词月搜索量</h2><p>criss cross office chair · 24 个月（2024-11 ~ 2026-10）；看方向与季节。</p></div>
+          <span class="tag">关键词 · 自然月</span>
+        </div>
+        <div id="marketChart"></div>
+        <div class="legend"><span><i></i>月搜索量</span></div>
+        <div class="callout" id="marketInsight"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">SEASONALITY</div><h2>12 个月季节性系数</h2><p>峰谷比约 2.11×；8 月峰值、1 月低谷，旺季在夏季/初秋。</p></div>
+          <span class="tag">关键词</span>
+        </div>
+        <div id="seasonChart"></div>
+        <div class="callout amber" id="seasonInsight"></div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:12px">
+      <div class="card-head">
+        <div><div class="card-kicker">SEARCH DEMAND</div><h2>核心搜索词趋势</h2><p>5 个关键词都有 24 个月趋势；主词最大、唯一高增长。</p></div>
+        <span class="tag">关键词 · 实测</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>核心词</th><th>月搜索量</th><th>同比</th><th>CPC</th><th>转化率</th><th>TOP3点击</th><th>低评论占比</th><th>判断</th></tr></thead>
+          <tbody id="keywordBody"></tbody>
+        </table>
+      </div>
+      <p class="card-note">同比为 2025-10 vs 2026-10；主词 criss cross office chair 177,750/月、+68.1%，是 5 个词里最大且唯一高增长的主词。</p>
+    </section>
+  </section>
+
+  <!-- 03 COMPETITION -->
+  <section class="panel" data-panel="competition" role="tabpanel">
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">PRICE ARCHITECTURE</div><h2>价格带：量额结构</h2><p>17 个 ASIN 样本；低价主导销量，$199+ 拿溢价。</p></div>
+          <span class="tag">样本</span>
+        </div>
+        <div id="bandChart"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>价格带</th><th>ASIN</th><th>销量份额</th><th>销售额份额</th><th>均价</th></tr></thead>
+            <tbody id="bandBody"></tbody>
+          </table>
+        </div>
+        <div class="callout" id="bandInsight"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">BRAND / SELLER</div><h2>品牌集中度</h2><p>TOP3 44.3%，样本 Amazon Buy Box 35.3%；宽类目 Amazon 50.6%。</p></div>
+          <span class="tag">样本</span>
+        </div>
+        <div id="brandBars"></div>
+        <div class="divider"></div>
+        <div class="econ-metrics">
+          <div class="econ-metric"><span>样本 Amazon Buy Box</span><b>35.3%</b></div>
+          <div class="econ-metric"><span>首页低评论占比</span><b>100%</b></div>
+          <div class="econ-metric"><span>TOP3 点击份额</span><b>27.5%</b></div>
+        </div>
+        <p class="card-note">宽类目 Home Office Desk Chairs：184,535 件 / $19.18M，Amazon 50.6%，TOP3 30.1%。细分更分散，但低价带仍被 Amazon 锁住。</p>
+      </section>
+    </div>
+
+    <div class="grid-2" style="margin-top:12px">
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">REVIEW MOAT</div><h2>评论门槛与星级</h2><p>评论墙低；这是这个细分最值得做的信号。</p></div>
+          <span class="tag">样本</span>
+        </div>
+        <div id="reviewBars"></div>
+        <div class="divider"></div>
+        <div id="negativeBars"></div>
+        <p class="card-note">51–200 条评论的 47.1% ASIN 贡献 25.1% 销量；1001+ 的 23.5% ASIN 贡献 45.9%。主词首页低评论占比 100%，新链接有机会。</p>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">CONTENT & CHANNEL</div><h2>内容与渠道</h2><p>A+ 100%、视频 80%、品牌店 100%；内容已标配。</p></div>
+          <span class="tag">Top10</span>
+        </div>
+        <div class="econ-metrics" style="grid-template-columns:repeat(2,1fr)">
+          <div class="econ-metric"><span>A+ 覆盖率</span><b>100%</b></div>
+          <div class="econ-metric"><span>视频覆盖率</span><b>80%</b></div>
+          <div class="econ-metric"><span>品牌店覆盖率</span><b>100%</b></div>
+          <div class="econ-metric"><span>Top10 样本</span><b>10</b></div>
+        </div>
+        <div class="callout amber" style="margin-top:10px"><span class="label">判断</span>内容已标配；差异只能在座宽、稳定性、腰托、轮子/底盘、装配体验和售后。</div>
+      </section>
+    </div>
+  </section>
+
+  <!-- 04 PRODUCT -->
+  <section class="panel" data-panel="product" role="tabpanel">
+    <section class="card flat">
+      <div style="padding:14px 16px 0">
+        <div class="card-head">
+          <div><div class="card-kicker">TOP SAMPLE</div><h2>代表商品矩阵</h2><p>17 个样本中按销量取 Top10；ASIN 可点回 Amazon。</p></div>
+          <span class="tag">样本 · Top10</span>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:0">
+        <table class="product-table">
+          <thead><tr><th>品牌 / 型号</th><th>价格</th><th>月销量</th><th>月销售额</th><th>评论 / 星级</th><th>内容</th><th>卖家 / FBA</th><th>功能</th></tr></thead>
+          <tbody id="productBody"></tbody>
+        </table>
+      </div>
+      <p class="card-note" style="padding:0 16px 14px">“内容”= A+ / 视频 / 品牌店；“卖家 / FBA”取 Buy Box 与 FBA 费；功能从标题/属性提取。</p>
+    </section>
+
+    <div class="grid-3" style="margin-top:12px" id="conceptCards"></div>
+
+    <div class="grid-2" style="margin-top:12px">
+      <section class="card">
+        <div class="card-kicker">GAP ANALYSIS</div>
+        <h2 style="margin:0 0 7px;font-size:12.5px">供给空位</h2>
+        <ul class="concept-list" style="margin:0;padding-left:16px;font-size:10px;line-height:1.75;color:var(--ink-2)">
+          <li><b>&lt;$70：</b>7 个 ASIN / 62.4% 销量 / 37.8% 销售额；TOP3 全是 $60–70，Buy Box 是 Amazon。</li>
+          <li><b>&gt;$190：</b>3 个 ASIN / 15.6% 销量 / 32.3% 销售额；宽座/大体重是溢价层。</li>
+          <li><b>评论墙：</b>47.1% ASIN 只有 51–200 条评论；主词首页低评论占比 100%。</li>
+          <li><b>内容：</b>A+ 100%、视频 80%、品牌店 100%；内容不是差异，结构/舒适/稳定才是。</li>
+        </ul>
+      </section>
+      <section class="card">
+        <div class="card-kicker">POSITIONING</div>
+        <h2 style="margin:0 0 7px;font-size:12.5px">建议切入</h2>
+        <div class="callout green" style="margin-top:0"><b>只做细分：</b>Wide Seat / Cross-Legged $229–249；28–30 英寸座宽、300–400lb、Fabric、翻扶手，打“盘腿 + 居家办公 + 猫/宠物”场景。</div>
+        <div class="callout amber"><b>不要做：</b>$60–70 标品；TOP3 是 DUMOS / Orange / OLIXIS，Buy Box 是 Amazon，FBA $29–34 + 广告 $53，3P 没有利润。</div>
+      </section>
+    </div>
+  </section>
+
+  <!-- 05 ECONOMICS -->
+  <section class="panel" data-panel="economics" role="tabpanel">
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">ASSUMPTIONS</div><h2>单位经济输入</h2><p>改价格 / 成本 / 广告，右侧实时重算。</p></div>
+          <span class="tag">USD / 件</span>
+        </div>
+        <div class="input-grid">
+          <div class="field"><label for="priceInput">目标售价</label><div class="input-wrap"><span class="prefix">$</span><input id="priceInput" type="number" min="1" step="1" value="229"/></div></div>
+          <div class="field"><label for="landedInput">到岸成本</label><div class="input-wrap"><span class="prefix">$</span><input id="landedInput" type="number" min="0" step="1" value="55"/></div></div>
+          <div class="field"><label for="cpcInput">广告 CPC</label><div class="input-wrap"><span class="prefix">$</span><input id="cpcInput" type="number" min="0.1" step="0.1" value="1.05"/></div></div>
+          <div class="field"><label for="cvrInput">转化率 CVR</label><div class="input-wrap"><input id="cvrInput" type="number" min="0.1" step="0.1" value="1.98"/><span class="suffix">%</span></div></div>
+          <div class="field"><label for="returnInput">退货率</label><div class="input-wrap"><input id="returnInput" type="number" min="0" step="0.5" value="1.42"/><span class="suffix">%</span></div></div>
+          <div class="field"><label>固定项</label><div class="input-wrap" style="background:#f6f1e7;color:var(--muted-2)"><span class="prefix">佣金 15% · FBA $38 · 其他 $6</span></div></div>
+        </div>
+        <p class="card-note">广告单均成本 = CPC ÷ CVR；CPC 取主词 $1.05，CVR 取 1.98%，FBA 取标准款 $38，退货 1.42%。</p>
+        <div class="callout" id="econCallout"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">UNIT ECONOMICS</div><h2>单件成本拆解</h2><p>目标售价下的钱去了哪里。</p></div>
+        </div>
+        <div id="costBar"></div>
+        <div id="costLegend" class="cost-legend"></div>
+        <div class="econ-metrics">
+          <div class="econ-metric"><span>单位贡献</span><b id="econProfit">$39.4</b></div>
+          <div class="econ-metric"><span>贡献毛利率</span><b id="econMargin">17.2%</b></div>
+          <div class="econ-metric"><span>盈亏平衡 ACOS</span><b id="econAcos">40.3%</b></div>
+        </div>
+        <p class="card-note" id="econNote"></p>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:12px">
+      <div class="card-head">
+        <div><div class="card-kicker">PRICE LADDER</div><h2>不同价格带的单件经济</h2><p>成本不变，只改售价；看低价带什么时候开始不成立。</p></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>目标售价</th><th>单位贡献</th><th>毛利率</th><th>盈亏平衡 ACOS</th><th>经济性判断</th></tr></thead>
+          <tbody id="ladderBody"></tbody>
+        </table>
+      </div>
+      <p class="card-note">实测结论：$199 只有 7.2%，不成立；$229 是 17.2% 的测试门槛；$249 到 22.5%；$60–70 标品为负。</p>
+    </section>
+  </section>
+
+  <!-- 06 DATA -->
+  <section class="panel" data-panel="data" role="tabpanel">
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">DATA COVERAGE</div><h2>这份实测覆盖了什么</h2><p>关键词细分 + 17 ASIN 样本 + Top10 详情；缺口显式标出。</p></div>
+          <span class="tag">10 / 14</span>
+        </div>
+        <div class="data-gaps" id="gapList"></div>
+        <p class="card-note">数据缺口不是“报告失败”，而是结论的边界；缺口必须显式标出。</p>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><div class="card-kicker">WHAT I NEED</div><h2>要把这版变成真实分析，请给我</h2><p>Excel / CSV 都行，字段不用完全按我的，我来映射。</p></div>
+        </div>
+        <table class="req-table">
+          <tbody>
+            <tr><td>P0</td><td><div class="req-desc"><b>供应商报价 / landed cost</b><br/>FOB、MOQ、交期、包装尺寸/重量、质保；目标 $229–249 的宽座/大体重款。</div></td><td>必须</td></tr>
+            <tr><td>P0</td><td><div class="req-desc"><b>包装 / FBA / 物流复核</b><br/>标准款约 66×52×25cm/13.5kg；大体重款约 85×57×35cm/25kg。</div></td><td>必须</td></tr>
+            <tr><td>P0</td><td><div class="req-desc"><b>认证 / 专利 / 合规</b><br/>BIFMA、承重/跌落、轮子/底盘耐久、外观专利、Amazon 合规。</div></td><td>必须</td></tr>
+            <tr><td>P1</td><td><div class="req-desc"><b>价格 / 促销 / Coupon 历史</b><br/>验证 $60–70 真实成交价和 Amazon 自营价格策略。</div></td><td>强烈建议</td></tr>
+            <tr><td>P1</td><td><div class="req-desc"><b>全量评论 / 变体级评论</b><br/>当前只有 Top3 Customers Say；需验证稳定性、坐垫、腰托、轮子。</div></td><td>强烈建议</td></tr>
+            <tr><td>P1</td><td><div class="req-desc"><b>1P/3P / Buy Box 结构</b><br/>样本 Amazon 35.3%；宽类目 50.6%；需要精确到价格带。</div></td><td>建议</td></tr>
+            <tr><td>P2</td><td><div class="req-desc"><b>站外趋势 / TikTok / 展会</b><br/>盘腿坐、居家办公、宠物场景的站外内容趋势。</div></td><td>加分</td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn primary sm" type="button" id="templateBtn">下载商品明细模板 CSV</button>
+          <span class="card-note" style="margin:0;align-self:center">模板只含商品表；现在最缺的是供应商报价/包装/认证。</span>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:12px">
+      <div class="card-head">
+        <div><div class="card-kicker">HONEST LIMITS</div><h2>这版还不能下结论的地方</h2><p>Sorftime 解决“市场结构”，但解决不了“你的成本”和“你的流量”。</p></div>
+      </div>
+      <div class="grid-3">
+        <div><b style="font-size:10px">数据层</b><p class="card-note">不是官方类目；17 个 ASIN 样本，不是全市场。搜索/销量为 Sorftime 估算。</p></div>
+        <div><b style="font-size:10px">经济层</b><p class="card-note">Landed cost $55、FBA $38、CPC $1.05、CVR 1.98% 是假设/样本；没有供应商报价和包装，利润只能做方向判断。</p></div>
+        <div><b style="font-size:10px">判断层</b><p class="card-note">不是全类目 Go；是 $229–249 宽座/大体重细分测试。没有供应链/包装优势，不要进低价带。</p></div>
+      </div>
+    </section>
+  </section>
+
+  <footer class="page-foot">
+    <span><b>CATEGORY LAB v0.3</b> · Sorftime MCP 实拉 2026-11-12 · Amazon US criss cross office chair / 17 ASIN 样本 · 第三方估算，非 Amazon 官方</span>
+    <span class="right">输入变化会重算经济性与评分 · 数据仅保存在本页内存 · 不构成投资建议</span>
+  </footer>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ------------------------------ demo data ------------------------------ */
+  var SEASON = [0.82, 0.78, 0.88, 0.94, 1.00, 1.02, 1.05, 1.00, 0.96, 1.00, 1.22, 1.38];
+  var MONTHS = [];
+  var SALES = [];
+  var REVENUE = [];
+  for (var i = 0; i < 24; i++) {
+    var d = new Date(2024, 10 + i, 1);
+    MONTHS.push(d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0'));
+    var factor = i < 12 ? 1 : 1.06;
+    var units = Math.round(24000 * SEASON[d.getMonth()] * factor * (1 + 0.002 * i));
+    SALES.push(units);
+    REVENUE.push(Math.round(units * (190 + i * 0.55)));
+  }
+
+  var DATA = {
+  "meta": {
+    "category": "Criss Cross / Cross-Legged Office Chair",
+    "site": "US",
+    "window": "2024-11 — 2026-10",
+    "source": "Sorftime MCP",
+    "pulled": "2026-11-12",
+    "scope": "keyword-defined niche"
+  },
+  "market": {
+    "months": [
+      "2024-11",
+      "2024-12",
+      "2025-01",
+      "2025-02",
+      "2025-03",
+      "2025-04",
+      "2025-05",
+      "2025-06",
+      "2025-07",
+      "2025-08",
+      "2025-09",
+      "2025-10",
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08",
+      "2026-09",
+      "2026-10"
+    ],
+    "search": [
+      19414,
+      11443,
+      16679,
+      22861,
+      23442,
+      22632,
+      25156,
+      28606,
+      42133,
+      63618,
+      86648,
+      106090,
+      137762,
+      129400,
+      117998,
+      112967,
+      171861,
+      159891,
+      160880,
+      186530,
+      195338,
+      201728,
+      182750,
+      178337
+    ],
+    "season": [
+      0.6722,
+      0.678,
+      0.9748,
+      0.911,
+      0.9286,
+      1.0738,
+      1.1853,
+      1.3244,
+      1.3447,
+      1.4197,
+      0.7845,
+      0.703
+    ]
+  },
+  "metrics": {
+    "search": 177750,
+    "yoy": 68.1,
+    "peakTrough": 2.11,
+    "peak": 1.4197,
+    "trough": 0.6722,
+    "sampleSales": 30365,
+    "sampleRevenue": 3225486.75,
+    "cr3": 44.3,
+    "amazonSellerShare": 35.3,
+    "count": 17
+  },
+  "broad": {
+    "top100Sales": 184535,
+    "top100Revenue": 19178460.71,
+    "cr3": 30.12,
+    "amazonShare": 50.63,
+    "avgPrice": 114.95,
+    "returnRate": 2.63,
+    "conversion": 9.0,
+    "productCount": 183869,
+    "available": 58929
+  },
+  "priceBands": [
+    {
+      "name": "<$70",
+      "asins": 7,
+      "unitShare": 62.4,
+      "revShare": 37.8,
+      "avg": 64.73,
+      "role": "低价走量"
+    },
+    {
+      "name": "$70–120",
+      "asins": 3,
+      "unitShare": 11.7,
+      "revShare": 11.7,
+      "avg": 106.65,
+      "role": "过渡"
+    },
+    {
+      "name": "$120–190",
+      "asins": 4,
+      "unitShare": 10.3,
+      "revShare": 18.2,
+      "avg": 187.49,
+      "role": "薄层"
+    },
+    {
+      "name": ">$190",
+      "asins": 3,
+      "unitShare": 15.6,
+      "revShare": 32.3,
+      "avg": 213.32,
+      "role": "高客单"
+    }
+  ],
+  "brands": [
+    {
+      "name": "DUMOS",
+      "share": 15.16,
+      "count": 1,
+      "avg": 59.99
+    },
+    {
+      "name": "Orange Factory",
+      "share": 14.83,
+      "count": 1,
+      "avg": 62.88
+    },
+    {
+      "name": "OLIXIS",
+      "share": 14.29,
+      "count": 1,
+      "avg": 69.98
+    },
+    {
+      "name": "NEO CHAIR",
+      "share": 12.69,
+      "count": 2,
+      "avg": 63.69
+    },
+    {
+      "name": "HOMRELEXA",
+      "share": 11.56,
+      "count": 2,
+      "avg": 209.99
+    },
+    {
+      "name": "amseatec",
+      "share": 10.02,
+      "count": 2,
+      "avg": 87.48
+    },
+    {
+      "name": "Sofayonn",
+      "share": 6.0,
+      "count": 2,
+      "avg": 189.99
+    },
+    {
+      "name": "Dowinx",
+      "share": 5.47,
+      "count": 2,
+      "avg": 189.99
+    },
+    {
+      "name": "Vigosit",
+      "share": 2.89,
+      "count": 1,
+      "avg": 89.99
+    },
+    {
+      "name": "LOFTSIT",
+      "share": 2.84,
+      "count": 1,
+      "avg": 209.99
+    }
+  ],
+  "review": {
+    "tiers": [
+      {
+        "label": "0–50",
+        "asinShare": 0.0,
+        "salesShare": 0.0
+      },
+      {
+        "label": "51–200",
+        "asinShare": 47.1,
+        "salesShare": 25.1
+      },
+      {
+        "label": "201–1000",
+        "asinShare": 29.4,
+        "salesShare": 29.1
+      },
+      {
+        "label": "1001+",
+        "asinShare": 23.5,
+        "salesShare": 45.9
+      }
+    ],
+    "negatives": [
+      {
+        "label": "稳定性 / 晃动",
+        "count": 61
+      },
+      {
+        "label": "结构 / 耐用",
+        "count": 42
+      },
+      {
+        "label": "腰背支撑",
+        "count": 24
+      },
+      {
+        "label": "高度 / 调节",
+        "count": 22
+      },
+      {
+        "label": "坐垫",
+        "count": 12
+      }
+    ]
+  },
+  "content": {
+    "aplus": 100,
+    "video": 80,
+    "store": 100,
+    "sample": 10
+  },
+  "features": {
+    "criss": {
+      "asins": 15,
+      "salesShare": 88.4
+    },
+    "cross_leg": {
+      "asins": 7,
+      "salesShare": 38.4
+    },
+    "wheels": {
+      "asins": 7,
+      "salesShare": 54.2
+    },
+    "armless": {
+      "asins": 2,
+      "salesShare": 9.1
+    },
+    "wide": {
+      "asins": 9,
+      "salesShare": 42.0
+    },
+    "big_tall": {
+      "asins": 5,
+      "salesShare": 20.6
+    },
+    "flip_arm": {
+      "asins": 6,
+      "salesShare": 22.3
+    },
+    "footrest": {
+      "asins": 4,
+      "salesShare": 9.9
+    },
+    "fabric": {
+      "asins": 2,
+      "salesShare": 17.9
+    }
+  },
+  "keywords": [
+    {
+      "term": "criss cross office chair",
+      "volume": 177750,
+      "yoy": 68.1,
+      "cpc": 1.05,
+      "conv": 1.98,
+      "top3Click": 27.52,
+      "lowReview": 100.0,
+      "verdict": "主词，强增长"
+    },
+    {
+      "term": "criss cross chair",
+      "volume": 110712,
+      "yoy": -38.1,
+      "cpc": 0.92,
+      "conv": 2.62,
+      "top3Click": 38.03,
+      "lowReview": 55.0,
+      "verdict": "同义，降温"
+    },
+    {
+      "term": "cross legged office chair",
+      "volume": 59771,
+      "yoy": -35.5,
+      "cpc": 1.42,
+      "conv": 1.43,
+      "top3Click": 24.1,
+      "lowReview": 58.33,
+      "verdict": "同义主词"
+    },
+    {
+      "term": "wide seat office chair",
+      "volume": 15977,
+      "yoy": 102.5,
+      "cpc": 1.57,
+      "conv": 0.0,
+      "top3Click": 54.35,
+      "lowReview": 18.75,
+      "verdict": "增长最快"
+    },
+    {
+      "term": "armless office chair",
+      "volume": 22883,
+      "yoy": -34.2,
+      "cpc": 2.48,
+      "conv": 4.79,
+      "top3Click": 18.56,
+      "lowReview": 23.21,
+      "verdict": "相邻场景"
+    }
+  ],
+  "products": [
+    {
+      "asin": "B0FV7ZDHRJ",
+      "price": 59.99,
+      "title": "DUMOS Criss Cross Chair, Cross Legged Vanity Chair, Home Office",
+      "sub_title": "No Wheels, Comfy Fabric, Height Adjustable, Armless Wide Seat, Swivel, Computer Desk Task, Bedroom, Study, Off White",
+      "monthly_sales_volume": 4604,
+      "monthly_sales_volume_share_in_top100": "2.82%",
+      "brand": "DUMOS",
+      "seller": "Amazon",
+      "rating": 4.6,
+      "rating_count": 1182,
+      "a_plus": true,
+      "has_video": true,
+      "has_brand_store": true,
+      "is_fba": true,
+      "fba_fee": 28.98,
+      "variations": 15,
+      "online_date": "2025-10-11",
+      "profit_rate": 36.69,
+      "package_size_cm": [
+        "66.50,51.99,24.99"
+      ]
+    },
+    {
+      "asin": "B0D6QX1MRC",
+      "price": 62.88,
+      "title": "Criss Cross Chair, Wide Fabric Vanity Desk Seat, Beige Wheel",
+      "sub_title": "Cross-Legged with 360° Swivel, Height Adjustable, Smooth and Silent Wheels, Comfy Seating for Office, Desk, or Computer Use",
+      "monthly_sales_volume": 4502,
+      "monthly_sales_volume_share_in_top100": "2.76%",
+      "brand": "Orange Factory",
+      "seller": "Amazon",
+      "rating": 4.4,
+      "rating_count": 904,
+      "a_plus": true,
+      "has_video": false,
+      "has_brand_store": true,
+      "is_fba": true,
+      "fba_fee": 33.86,
+      "variations": 23,
+      "online_date": "2024-06-11",
+      "profit_rate": 31.15,
+      "package_size_cm": [
+        "69.39,57.81,27.00"
+      ]
+    },
+    {
+      "asin": "B0HMJQYFHZ",
+      "price": 69.98,
+      "title": "OLIXIS Criss Cross Chair with Wheels, Vanity Chair, Home Office Desk",
+      "sub_title": "Comfy Fabric, Armless Cross Legged Wide Seat, Height Adjustable Swivel Rolling, Home Computer Task, Bedroom Study, Beige",
+      "monthly_sales_volume": 4340,
+      "monthly_sales_volume_share_in_top100": "2.66%",
+      "brand": "OLIXIS",
+      "seller": "Amazon",
+      "rating": 4.6,
+      "rating_count": 2245,
+      "a_plus": true,
+      "has_video": true,
+      "has_brand_store": true,
+      "is_fba": true,
+      "fba_fee": 28.94,
+      "variations": 10,
+      "online_date": "null",
+      "profit_rate": 43.64,
+      "package_size_cm": [
+        "66.29,51.82,24.89"
+      ]
+    },
+    {
+      "asin": "B0FF3GMW36",
+      "price": 229.99,
+      "title": "Big and Tall Office Chair, Flip Armrests for Pets & Cross Legged",
+      "sub_title": "Executive Ergonomic Computer Gaming Chair with Foot Rest, Teddy Fleece Wide Seat Reclining Desk Chair, White Vanity Chair",
+      "monthly_sales_volume": 2884,
+      "monthly_sales_volume_share_in_top100": "6.71%",
+      "brand": "HOMRELEXA",
+      "seller": "HOMRELEXA",
+      "rating": 4.3,
+      "rating_count": 1089,
+      "a_plus": true,
+      "has_video": true,
+      "has_brand_store": true,
+      "is_fba": false,
+      "fba_fee": -1.0,
+      "variations": 15,
+      "online_date": "2025-06-23",
+      "profit_rate": 85.0,
+      "package_size_cm": [
+        "85.09,56.90,35.05"
+      ]
+    },
+    {
+      "asin": "B0G62PHS8N",
+      "price": 109.98,
+      "title": "Amseatec Criss Cross Office Chair, Swivel Makeup Vanity Chair with Wheels",
+      "sub_title": "90-180° 5-Gear Adjustable Armrest,90-105° Title,24.8'' Wide Seat Adhd Home Office Chair,Pu Leather,330 Lbs,Bedroom",
+      "monthly_sales_volume": 2097,
+      "monthly_sales_volume_share_in_top100": "4.87%",
+      "brand": "amseatec",
+      "seller": "Amseatec USA",
+      "rating": 4.5,
+      "rating_count": 1130,
+      "a_plus": true,
+      "has_video": true,
+      "has_brand_store": true,
+      "is_fba": false,
+      "fba_fee": -1.0,
+      "variations": 10,
+      "online_date": "2025-12-11",
+      "profit_rate": 85.0,
+      "package_size_cm": [
+        "68.00,53.01,30.99"
+      ]
+    },
+    {
+      "asin": "B0CZVRG1KY",
+      "price": 64.42,
+      "title": "NEO CHAIR Criss Cross Chair with No Wheels, Cozy Wide Armless Seat, Beige",
+      "sub_title": "Cross-Legged Friendly, Comfy Support for Office, Desk, or Vanity, Smooth 360° Swivel Motion with Adjustable Height and Tilt",
+      "monthly_sales_volume": 2051,
+      "monthly_sales_volume_share_in_top100": "4.26%",
+      "brand": "NEO CHAIR",
+      "seller": "Amazon",
+      "rating": 4.5,
+      "rating_count": 252,
+      "a_plus": true,
+      "has_video": true,
+      "has_brand_store": true,
+      "is_fba": true,
+      "fba_fee": 30.87,
+      "variations": 17,
+      "online_date": "2024-04-12",
+      "profit_rate": 37.08,
+      "package_size_cm": [
+        "65.00,52.50,27.51"
+      ]
+    },
+    {
+      "asin": "B0GS8B8BGY",
+      "price": 62.96,
+      "title": "NEO CHAIR Criss Cross Chair with Wheels, Wide Comfy Desk Seat, Teddy Pink",
+      "sub_title": "Cross-Legged Comfort, Height Adjustable with 360° Swivel, Smooth Rolling Base for Vanity, Computer, or Home Office Use Daily",
+      "monthly_sales_volume": 1801,
+      "monthly_sales_volume_share_in_top100": "4.21%",
+      "brand": "NEO CHAIR",
+      "seller": "Amazon",
+      "rating": 4.6,
+      "rating_count": 69,
+      "a_plus": true,
+      "has_video": false,
+      "has_brand_store": true,
+      "is_fba": true,
+      "fba_fee": 28.93,
+      "variations": 14,
+      "online_date": "2026-03-30",
+      "profit_rate": 39.06,
+      "package_size_cm": [
+        "64.49,53.01,24.99"
+      ]
+    },
+    {
+      "asin": "B0FV8FMGK4",
+      "price": 199.99,
+      "title": "Dowinx Cross Legged Office Chair with Pivoting Armrests,Criss Cross Chair with Pocket Spring Seat & Back,Reclining Computer Gaming Chair with Footrest and Metal Base (Brown)",
+      "sub_title": "",
+      "monthly_sales_volume": 988,
+      "monthly_sales_volume_share_in_top100": "4.66%",
+      "brand": "Dowinx",
+      "seller": "QL-Dowinx-US",
+      "rating": 4.3,
+      "rating_count": 263,
+      "a_plus": true,
+      "has_video": true,
+      "has_brand_store": true,
+      "is_fba": false,
+      "fba_fee": -1.0,
+      "variations": 5,
+      "online_date": "2025-10-13",
+      "profit_rate": 85.0,
+      "package_size_cm": [
+        "72.49,72.01,42.01"
+      ]
+    },
+    {
+      "asin": "B0GN34Y6X5",
+      "price": 189.99,
+      "title": "Wider Seat Office Chair with Flip Armrests for Criss Cross Legged&Cats, Big and Tall Executive Ergonomic Reclining Chair with Footrest&Lumbar Pillow, Teddy Fleece Desk Chair,White Vanity Chair",
+      "sub_title": "",
+      "monthly_sales_volume": 974,
+      "monthly_sales_volume_share_in_top100": "4.17%",
+      "brand": "Sofayonn",
+      "seller": "Sofayonn-US",
+      "rating": 4.4,
+      "rating_count": 195,
+      "a_plus": true,
+      "has_video": true,
+      "has_brand_store": true,
+      "is_fba": false,
+      "fba_fee": -1.0,
+      "variations": 9,
+      "online_date": "2026-02-13",
+      "profit_rate": 85.0,
+      "package_size_cm": [
+        "76.00,57.00,42.01"
+      ]
+    },
+    {
+      "asin": "B0GS6V43QW",
+      "price": 64.99,
+      "title": "Amseatec Criss Cross Office Chair with Wheels, Fabric Makeup Vanity Chair",
+      "sub_title": "Extra-deep 20.5'' seat for cross-legged sitting. 330 lbs, SGS gas lift. 90-115° tilt, 360° swivel. Soft fabric, armless",
+      "monthly_sales_volume": 947,
+      "monthly_sales_volume_share_in_top100": "4.42%",
+      "brand": "amseatec",
+      "seller": "Amseatec USA",
+      "rating": 4.8,
+      "rating_count": 84,
+      "a_plus": true,
+      "has_video": true,
+      "has_brand_store": true,
+      "is_fba": false,
+      "fba_fee": -1.0,
+      "variations": 7,
+      "online_date": "2026-03-23",
+      "profit_rate": 85.0,
+      "package_size_cm": [
+        "63.20,53.19,26.21"
+      ]
+    }
+  ],
+  "assumptions": {
+    "price": 229,
+    "landed": 55,
+    "cpc": 1.05,
+    "cvr": 1.98,
+    "ret": 1.42,
+    "fba": 38,
+    "referral": 15,
+    "overhead": 6
+  }
+};
+
+  var SEASON = DATA.market.season;
+  var MONTHS = DATA.market.months;
+  var SEARCH = DATA.market.search;
+
+  var SCORES = { demand: 75, competition: 68, differentiation: 75, supply: 45, content: 62 };
+  var WEIGHTS = { demand: .30, competition: .25, econ: .25, differentiation: .10, supply: .05, content: .05 };
+
+  /* ------------------------------ helpers ------------------------------ */
+  var $ = function(sel, root){ return (root || document).querySelector(sel); };
+  var $$ = function(sel, root){ return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  var nf0 = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
+  var nf1 = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 1 });
+  var nf2 = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 });
+  function fmt(n){ return nf0.format(Math.round(n)); }
+  function fmt1(n){ return nf1.format(Math.round(n * 10) / 10); }
+  function money(n){ var sign = n < 0 ? '-' : ''; return sign + '$' + nf0.format(Math.abs(Math.round(n))); }
+  function money1(n){ var sign = n < 0 ? '-' : ''; return sign + '$' + nf1.format(Math.abs(Math.round(n * 10) / 10)); }
+  function pct(n){ return fmt1(n) + '%'; }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function clamp(n, min, max){ n = Number(n); if (!Number.isFinite(n)) return min; return Math.min(max, Math.max(min, n)); }
+  function setText(sel, val){ var el = $(sel); if (el) el.textContent = val; }
+  function cs(score){ return score >= 75 ? 'high' : score >= 55 ? 'mid' : 'low'; }
+  function pill(status, label){
+    var map = { pass: 'pass', warn: 'warn', fail: 'fail', unknown: 'unknown' };
+    return '<span class="gate-pill ' + (map[status] || 'unknown') + '">' + esc(label) + '</span>';
+  }
+  function toast(msg){
+    var el = $('#toast'); el.textContent = msg; el.classList.add('show');
+    clearTimeout(toast._t); toast._t = setTimeout(function(){ el.classList.remove('show'); }, 2200);
+  }
+
+  /* ------------------------------ market math ------------------------------ */
+  var last = SEARCH.length - 1;
+  var lastSearch = SEARCH[last];
+  var prevIndex = last - 12;
+  var yoySearch = prevIndex >= 0 ? (lastSearch / SEARCH[prevIndex] - 1) * 100 : 0;
+  var peak = Math.max.apply(null, SEASON);
+  var trough = Math.min.apply(null, SEASON);
+  var peakTrough = peak / trough;
+
+  /* ------------------------------ economics ------------------------------ */
+  var inputs = { price: 229, landed: 55, cpc: 1.05, cvr: 1.98, ret: 1.42 };
+
+  function econAt(price, landed, cpc, cvr, ret){
+    var referral = price * (DATA.assumptions.referral / 100);
+    var ad = cvr > 0 ? cpc / (cvr / 100) : 0;
+    var retCost = price * (ret / 100);
+    var contribution = price - landed - referral - DATA.assumptions.fba - ad - retCost - DATA.assumptions.overhead;
+    var margin = price > 0 ? contribution / price * 100 : 0;
+    var breakEven = price > 0 ? (price - landed - referral - DATA.assumptions.fba - retCost - DATA.assumptions.overhead) / price * 100 : 0;
+    return { price: price, landed: landed, referral: referral, fba: DATA.assumptions.fba, ad: ad, ret: retCost, overhead: DATA.assumptions.overhead, contribution: contribution, margin: margin, breakEven: breakEven };
+  }
+
+  function econFor(){
+    return econAt(inputs.price, inputs.landed, inputs.cpc, inputs.cvr, inputs.ret);
+  }
+
+  function econScore(margin){
+    if (margin <= 0) return 10;
+    if (margin >= 25) return 90;
+    if (margin >= 20) return 82;
+    if (margin >= 15) return 65;
+    if (margin >= 10) return 45;
+    return 25;
+  }
+
+  function econStatus(margin){
+    if (margin < 10) return { key: 'fail', label: '经济性不成立', cls: 'red' };
+    if (margin < 15) return { key: 'warn', label: '经济性偏薄', cls: 'amber' };
+    if (margin < 20) return { key: 'warn', label: '经济性勉强', cls: 'amber' };
+    return { key: 'pass', label: '经济性成立', cls: 'green' };
+  }
+
+  function totalScore(econ){
+    var s = SCORES.demand * WEIGHTS.demand + SCORES.competition * WEIGHTS.competition +
+      econ * WEIGHTS.econ + SCORES.differentiation * WEIGHTS.differentiation +
+      SCORES.supply * WEIGHTS.supply + SCORES.content * WEIGHTS.content;
+    return Math.round(s);
+  }
+
+  function verdictFor(score, margin, price){
+    if (margin < 10 || score < 50) return {
+      text: '暂不进入', cls: 'red',
+      reason: '当前 $' + fmt(price) + ' 毛利 ' + fmt1(margin) + '%；$199 以下无法覆盖 FBA/广告，标品低价带不做。'
+    };
+    return { text: '有条件进入', cls: 'amber', reason: '搜索 17.8 万/月、同比 +68.1%，竞争墙低；$229–249 可测试，但供应链/包装仍未验证。' };
+  }
+
+  /* ------------------------------ render: top ------------------------------ */
+  function renderTop(){
+    setText('#kpiSales', fmt(DATA.metrics.search));
+    setText('#kpiRevenue', '$' + nf1.format(DATA.metrics.sampleRevenue / 1000000) + 'M');
+    setText('#kpiYoY', (DATA.metrics.yoy >= 0 ? '+' : '') + fmt1(DATA.metrics.yoy) + '%');
+    setText('#kpiCr10', DATA.metrics.cr3 + '%');
+  }
+
+  /* ------------------------------ render: charts ------------------------------ */
+  function marketChart(){
+    var w = 720, h = 250, pad = { l: 48, r: 18, t: 18, b: 28 };
+    var max = Math.max.apply(null, SEARCH) * 1.08;
+    var min = 0;
+    var iw = w - pad.l - pad.r;
+    var ih = h - pad.t - pad.b;
+    var x = function(i){ return pad.l + (i / (SEARCH.length - 1)) * iw; };
+    var y = function(v){ return pad.t + (1 - (v - min) / (max - min)) * ih; };
+    var path = SEARCH.map(function(v, i){ return (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); }).join(' ');
+    var area = path + ' L' + x(SEARCH.length - 1).toFixed(1) + ',' + (pad.t + ih) + ' L' + x(0).toFixed(1) + ',' + (pad.t + ih) + ' Z';
+    var grid = '';
+    for (var g = 0; g <= 4; g++) {
+      var val = max * g / 4;
+      var yy = y(val);
+      grid += '<line class="grid" x1="' + pad.l + '" y1="' + yy.toFixed(1) + '" x2="' + (pad.l + iw) + '" y2="' + yy.toFixed(1) + '"/>';
+      grid += '<text x="' + (pad.l - 7) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end">' + Math.round(val / 1000) + 'k</text>';
+    }
+    var labels = '';
+    MONTHS.forEach(function(m, i){
+      if (i % 4 === 0 || i === MONTHS.length - 1) {
+        labels += '<text x="' + x(i).toFixed(1) + '" y="' + (h - 8) + '" text-anchor="middle">' + m + '</text>';
+      }
+    });
+    return '<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="核心词月搜索量趋势">' +
+      grid +
+      '<path class="area" d="' + area + '"/>' +
+      '<path class="line" d="' + path + '"/>' +
+      '<circle class="dot" cx="' + x(SEARCH.length - 1).toFixed(1) + '" cy="' + y(SEARCH[SEARCH.length - 1]).toFixed(1) + '" r="3.5"/>' +
+      labels +
+    '</svg>';
+  }
+
+  function seasonChart(){
+    var w = 720, h = 220, pad = { l: 28, r: 12, t: 16, b: 26 };
+    var iw = w - pad.l - pad.r, ih = h - pad.t - pad.b;
+    var max = Math.max.apply(null, SEASON) * 1.08;
+    var min = Math.min.apply(null, SEASON) * 0.92;
+    var bw = iw / 12 * 0.58;
+    var bars = '', labels = '';
+    SEASON.forEach(function(v, i){
+      var bh = (v - min) / (max - min) * ih;
+      var x = pad.l + (i + 0.5) * (iw / 12) - bw / 2;
+      var y = pad.t + ih - bh;
+      bars += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2" fill="' + (v >= 1.2 ? '#b5451b' : '#d8c8b0') + '"/>';
+      labels += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (h - 7) + '" text-anchor="middle">' + (i + 1) + '月</text>';
+      bars += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 4).toFixed(1) + '" text-anchor="middle" style="fill:#7d7669;font-size:8px">' + v.toFixed(2) + '</text>';
+    });
+    var baseline = pad.t + ih - (1 - min) / (max - min) * ih;
+    return '<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="12个月季节性系数">' +
+      '<line class="grid" x1="' + pad.l + '" y1="' + baseline.toFixed(1) + '" x2="' + (w - pad.r) + '" y2="' + baseline.toFixed(1) + '" stroke-dasharray="3 3"/>' +
+      '<text x="' + (pad.l - 4) + '" y="' + (baseline + 3).toFixed(1) + '" text-anchor="end">1.0</text>' +
+      bars + labels +
+    '</svg>';
+  }
+
+  /* ------------------------------ render: demand ------------------------------ */
+  function renderDemand(){
+    $('#marketChart').innerHTML = marketChart();
+    $('#seasonChart').innerHTML = seasonChart();
+    $('#marketInsight').innerHTML = '<span class="label">判断</span>criss cross office chair 月搜索 177,750，同比 +' + fmt1(DATA.metrics.yoy) + '%；2025-11 137,762 → 2026-10 178,337。主词在增长；criss cross chair 是另一个词（110,712，-38.1%）。';
+    $('#seasonInsight').innerHTML = '<span class="label">备货含义</span>峰谷比 ' + fmt1(DATA.metrics.peakTrough) + '×；8 月 1.42、7 月 1.34，1 月 0.67。旺季在夏季/初秋，备货/上架要在 3–4 月前；不要按单月峰值压库存。';
+
+    var rows = DATA.keywords.map(function(k){
+      var yoy = k.yoy;
+      var cls = yoy == null ? 'td-muted' : (yoy >= 5 ? 'td-green' : yoy < 0 ? 'td-red' : 'td-amber');
+      var conv = k.conv > 0 ? fmt1(k.conv) + '%' : '—';
+      var low = k.lowReview == null ? '—' : fmt1(k.lowReview) + '%';
+      var verdict = k.term === 'criss cross office chair' ? '主词强增长' : k.term === 'criss cross chair' ? '同义降温' : k.term === 'cross legged office chair' ? '同义主词' : k.term === 'wide seat office chair' ? '增长最快' : '相邻场景';
+      return '<tr><td><b>' + esc(k.term) + '</b></td><td>' + fmt(k.volume) + '</td><td class="' + cls + '">' + (yoy == null ? '—' : (yoy >= 0 ? '+' : '') + fmt1(yoy) + '%') + '</td><td>$' + k.cpc.toFixed(2) + '</td><td>' + conv + '</td><td>' + fmt1(k.top3Click) + '%</td><td>' + low + '</td><td class="td-muted">' + verdict + '</td></tr>';
+    }).join('');
+    $('#keywordBody').innerHTML = rows;
+  }
+
+  /* ------------------------------ render: competition ------------------------------ */
+  function renderCompetition(){
+    var roles = { '<$70': '低价走量', '$70–120': '过渡', '$120–190': '薄层', '>$190': '高客单' };
+    $('#bandChart').innerHTML = DATA.priceBands.map(function(b){
+      return '<div class="bar-row"><span class="bar-name">' + esc(b.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + b.unitShare + '%"></div></div><span class="bar-val"><b>' + b.unitShare + '%</b> 销量</span></div>' +
+        '<div class="bar-row" style="margin-top:-3px"><span class="bar-name"></span><div class="bar-track"><div class="bar-fill sand" style="width:' + b.revShare + '%"></div></div><span class="bar-val">' + b.revShare + '% 销售额</span></div>';
+    }).join('');
+    $('#bandBody').innerHTML = DATA.priceBands.map(function(b){
+      return '<tr><td><b>' + esc(b.name) + '</b><div class="tiny">' + b.asins + ' ASIN · ' + (roles[b.name] || '') + '</div></td><td>' + b.asins + '</td><td>' + b.unitShare + '%</td><td>' + b.revShare + '%</td><td>' + money(b.avg) + '</td></tr>';
+    }).join('');
+    $('#bandInsight').innerHTML = '<span class="label">判断</span><$70 用 62.4% 销量只拿 37.8% 销售额，TOP3 都是 $60–70 且 Amazon 拿 Buy Box；>$190 只有 3 个 ASIN，却拿 32.3% 销售额。低价是绞肉机，$199+ 才有利润。';
+
+    var maxShare = Math.max.apply(null, DATA.brands.map(function(b){ return b.share; }));
+    $('#brandBars').innerHTML = DATA.brands.slice(0, 10).map(function(b){
+      return '<div class="bar-row"><span class="bar-name" title="' + esc(b.name) + '">' + esc(b.name) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (b.share / maxShare * 100) + '%"></div></div><span class="bar-val"><b>' + b.share + '%</b> · ' + money(b.avg) + '</span></div>';
+    }).join('');
+
+    $('#reviewBars').innerHTML = DATA.review.tiers.filter(function(t){ return t.asinShare > 0; }).map(function(t){
+      return '<div class="bar-row"><span class="bar-name">' + esc(t.label) + ' 条</span><div class="bar-track"><div class="bar-fill" style="width:' + t.salesShare + '%"></div></div><span class="bar-val"><b>' + t.salesShare + '%</b> 销量</span></div>' +
+        '<div class="bar-row" style="margin-top:-3px"><span class="bar-name"></span><div class="bar-track"><div class="bar-fill sand" style="width:' + t.asinShare + '%"></div></div><span class="bar-val">' + t.asinShare + '% ASIN</span></div>';
+    }).join('');
+
+    var maxNeg = Math.max.apply(null, DATA.review.negatives.map(function(n){ return n.count; }));
+    $('#negativeBars').innerHTML = '<div class="card-kicker" style="margin-bottom:5px">Top3 评论负面主题（样本）</div>' + DATA.review.negatives.map(function(n){
+      return '<div class="bar-row"><span class="bar-name">' + esc(n.label) + '</span><div class="bar-track"><div class="bar-fill red" style="width:' + (n.count / maxNeg * 100) + '%"></div></div><span class="bar-val">' + n.count + ' 次</span></div>';
+    }).join('');
+  }
+
+  /* ------------------------------ render: products ------------------------------ */
+  function contentLabel(p){
+    var c = [];
+    if (p.a_plus) c.push('A+');
+    if (p.has_video) c.push('视频');
+    if (p.has_brand_store) c.push('店');
+    return c.length ? c.join(' · ') : '—';
+  }
+  function featurePills(p){
+    var t = ((p.title || '') + ' ' + (p.sub_title || '')).toLowerCase();
+    var out = [];
+    if (t.includes('big and tall') || t.includes('400lb')) out.push('<span class="pill green">Big &amp; Tall</span>');
+    else if (t.includes('wide')) out.push('<span class="pill green">宽座</span>');
+    if (t.includes('flip')) out.push('<span class="pill">翻扶手</span>');
+    if (t.includes('no wheel')) out.push('<span class="pill">无轮</span>');
+    else if (t.includes('wheel')) out.push('<span class="pill hot">带轮</span>');
+    if (t.includes('foot rest') || t.includes('footrest')) out.push('<span class="pill">脚托</span>');
+    if (t.includes('fabric')) out.push('<span class="pill">Fabric</span>');
+    if (t.includes('armless')) out.push('<span class="pill">无扶手</span>');
+    return out.slice(0,4).join('') || '<span class="td-muted">—</span>';
+  }
+  function renderProducts(){
+    var sorted = DATA.products.slice().sort(function(a, b){ return b.monthly_sales_volume - a.monthly_sales_volume; }).slice(0, 10);
+    $('#productBody').innerHTML = sorted.map(function(p){
+      var title = (p.title || '').length > 68 ? p.title.slice(0, 68) + '…' : (p.title || '');
+      var fba = p.is_fba ? 'FBA' : 'FBM';
+      var fee = p.fba_fee > 0 ? ' $' + p.fba_fee.toFixed(2) : '';
+      var revenue = p.monthly_sales_volume * p.price;
+      return '<tr>' +
+        '<td><span class="brand-mark">' + esc(p.brand) + '</span><div style="font-size:10px;line-height:1.45;margin-top:2px">' + esc(title) + '</div><div class="tiny"><a href="https://www.amazon.com/dp/' + esc(p.asin) + '" target="_blank" rel="noopener" style="color:var(--muted-2);text-decoration:none">' + esc(p.asin) + '</a> · ' + esc(p.online_date || '—') + '</div></td>' +
+        '<td>$' + p.price.toFixed(2) + '</td>' +
+        '<td>' + fmt(p.monthly_sales_volume) + '</td>' +
+        '<td>$' + nf1.format(revenue / 1000000) + 'M</td>' +
+        '<td><b>' + fmt(p.rating_count) + '</b><div class="tiny ' + (p.rating >= 4.5 ? 'td-green' : p.rating < 4.2 ? 'td-red' : '') + '">' + p.rating.toFixed(1) + ' ★</div></td>' +
+        '<td>' + contentLabel(p) + '</td>' +
+        '<td>' + esc(p.seller || '—') + '<div class="tiny">' + fba + fee + '</div></td>' +
+        '<td>' + featurePills(p) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    var concepts = [
+      { key: 'A', name: 'Wide Seat 229', price: '$229–249', rec: true, bullets: ['28–30 英寸宽座，300–400lb，盘腿/宠物都能坐', 'Fabric + 翻扶手 + 带轮/无轮两个版本', '$190+ 只有 3 个 ASIN，却拿 32.3% 销售额', '用座宽、稳定性、腰托、易装配做差异'], note: '主推；先在 $229–249 做 300–500 件测试。' },
+      { key: 'B', name: 'Big & Tall 249', price: '$249–279', rec: false, bullets: ['400lb、85×57×35cm、约 25kg，FBM/oversize', '带脚托/翻扶手，打大体重 + 长时间坐', '客单高，但包装和退货风险高', '先拿供应商包装/FBA 报价再定价'], note: '第二优先；没有物流方案不要上。' },
+      { key: 'C', name: '不做 $60–70', price: '停止', rec: false, bullets: ['DUMOS / Orange / OLIXIS 占 TOP3，Buy Box 是 Amazon', 'FBA $29–34 + 广告 $35，3P 没有利润', '62.4% 销量集中在 <$70，但只拿 37.8% 销售额', '低价带是 Amazon 的生意'], note: '明确不做：标品低价款。' }
+    ];
+    $('#conceptCards').innerHTML = concepts.map(function(c){
+      return '<div class="concept ' + (c.rec ? 'recommend' : '') + '">' +
+        '<div class="concept-head"><div><div class="concept-key">CONCEPT ' + c.key + '</div><h3>' + c.name + '</h3></div><div class="concept-price">' + c.price + '</div></div>' +
+        '<ul>' + c.bullets.map(function(b){ return '<li>' + b + '</li>'; }).join('') + '</ul>' +
+        '<p>' + c.note + '</p>' +
+        (c.rec ? '<span class="rec">● 推荐主推</span>' : '') +
+      '</div>';
+    }).join('');
+  }
+
+  /* ------------------------------ render: economics ------------------------------ */
+  function renderEconomics(){
+    var e = econFor();
+    var score = econScore(e.margin);
+    var status = econStatus(e.margin);
+    var verdict = verdictFor(totalScore(score), e.margin, e.price);
+
+    setText('#kpiContribution', money1(e.contribution));
+    setText('#kpiMargin', fmt1(e.margin) + '%');
+    setText('#miniEcon', score);
+    setText('#verdictText', verdict.text);
+    setText('#verdictReason', verdict.reason);
+    $('#verdictText').className = 'verdict ' + verdict.cls;
+    setText('#scoreValue', totalScore(score));
+    $('#scoreValue').parentNode.querySelector('small').textContent = '/100';
+
+    setText('#econProfit', money1(e.contribution));
+    $('#econProfit').className = e.contribution < 0 ? 'red' : 'green';
+    setText('#econMargin', fmt1(e.margin) + '%');
+    $('#econMargin').className = e.margin < 10 ? 'red' : e.margin < 20 ? 'amber' : 'green';
+    setText('#econAcos', fmt1(e.breakEven) + '%');
+    $('#econAcos').className = e.breakEven < 0 ? 'red' : e.breakEven < 20 ? 'amber' : 'green';
+
+    var parts = [
+      { key: 'landed', label: '到岸成本', val: e.landed, cls: 'landed' },
+      { key: 'referral', label: '佣金 15%', val: e.referral, cls: 'referral' },
+      { key: 'fba', label: 'FBA', val: e.fba, cls: 'fba' },
+      { key: 'ad', label: '广告', val: e.ad, cls: 'ad' },
+      { key: 'return', label: '退货', val: e.ret, cls: 'return' },
+      { key: 'overhead', label: '其他', val: e.overhead, cls: 'overhead' },
+      { key: 'profit', label: e.contribution >= 0 ? '贡献毛利' : '亏损', val: Math.abs(e.contribution), cls: e.contribution >= 0 ? 'profit' : 'loss' }
+    ];
+    var total = e.price;
+    $('#costBar').innerHTML = '<div class="cost-bar">' + parts.map(function(p){
+      var w = Math.max(0, p.val / total * 100);
+      return '<div class="cost-seg ' + p.cls + '" style="width:' + w + '%" title="' + p.label + ' ' + money(p.val) + '">' + (w > 8 ? Math.round(p.val) : '') + '</div>';
+    }).join('') + '</div>';
+    $('#costLegend').innerHTML = parts.map(function(p){
+      var colors = { landed:'#5d5548', referral:'#8d8272', fba:'#b3a48e', ad:'#c77b52', return:'#d9a085', overhead:'#d8c8b0', profit:'#2f6b4f', loss:'#a92b20' };
+      return '<span><i style="background:' + colors[p.cls] + '"></i>' + p.label + ' ' + money(p.val) + '</span>';
+    }).join('');
+
+    $('#econCallout').innerHTML = '<span class="label">当前判断</span>' + status.label + '：单位贡献 ' + money1(e.contribution) + '，毛利率 ' + fmt1(e.margin) + '%。' + (e.margin < 20 ? ' $229 只是测试门槛；$199 的 7.2% 不成立，主推应放 $249。' : ' 经济性可支撑 $229–249 的宽座款，但必须用真实供应商报价复核。');
+    $('#econCallout').className = 'callout ' + (e.margin < 15 ? 'red' : e.margin < 20 ? 'amber' : 'green');
+
+    var ladder = [99, 129, 159, 189, 199, 229, 249, 299].map(function(price){
+      var x = econAt(price, inputs.landed, inputs.cpc, inputs.cvr, inputs.ret);
+      var st = econStatus(x.margin);
+      return '<tr><td><b>$' + price + '</b></td><td class="' + (x.contribution < 0 ? 'td-red' : 'td-green') + '">' + money1(x.contribution) + '</td><td class="' + (x.margin < 10 ? 'td-red' : x.margin < 20 ? 'td-amber' : 'td-green') + '">' + fmt1(x.margin) + '%</td><td>' + fmt1(x.breakEven) + '%</td><td class="' + (st.key === 'fail' ? 'td-red' : st.key === 'warn' ? 'td-amber' : 'td-green') + '">' + st.label + '</td></tr>';
+    }).join('');
+    $('#ladderBody').innerHTML = ladder;
+
+    $('#econNote').textContent = '按当前 CPC $' + inputs.cpc.toFixed(2) + ' / CVR ' + inputs.cvr.toFixed(1) + '% 计算，广告单均成本约 ' + money1(e.ad) + '；FBA $' + DATA.assumptions.fba + '。退货按售价 ' + inputs.ret + '%，不含质保/补发。';
+    renderGates(e, status, verdict, score);
+    renderScores(score);
+  }
+
+  /* ------------------------------ render: gates / score ------------------------------ */
+  var gateData = [
+    { key: 'demand', label: '需求', status: 'pass', text: 'criss cross office chair 月搜索 ' + fmt(DATA.metrics.search) + '，同比 +' + fmt1(DATA.metrics.yoy) + '%；2025-11 137,762 → 2026-10 178,337。峰谷 ' + fmt1(DATA.metrics.peakTrough) + '×，旺季在 7–8 月。' },
+    { key: 'competition', label: '竞争', status: 'pass', text: 'TOP3 点击 ' + fmt1(DATA.keywords[0].top3Click) + '%，TOP3 销量 ' + fmt1(DATA.metrics.cr3) + '%，样本 Amazon Buy Box ' + fmt1(DATA.metrics.amazonSellerShare) + '%；首页低评论占比 100%。' },
+    { key: 'supply', label: '供应链', status: 'unknown', text: '缺供应商报价、MOQ、交期、包装/BIFMA/专利；标准款 FBA $29–34，大体重款约 25kg、85cm 包装。' },
+    { key: 'differentiation', label: '差异化', status: 'pass', text: 'Wide 42.0% 销量、Big & Tall 20.6%、Flip Arm 22.3%、Footrest 9.9%。宽座/盘腿/翻扶手可做结构差异。' }
+  ];
+
+  function renderGates(e, status, verdict, score){
+    var gates = gateData.map(function(g){ return Object.assign({}, g); });
+    gates.splice(2, 0, { key: 'econ', label: '经济性', status: status.key, text: '目标价 ' + money(inputs.price) + '：单位贡献 ' + money1(e.contribution) + '，毛利率 ' + fmt1(e.margin) + '%；低于 10% 视为不成立。' });
+    $('#gateBody').innerHTML = gates.map(function(g){
+      return '<tr><td>' + esc(g.label) + '</td><td><div class="gate-text">' + esc(g.text) + '</div></td><td>' + pill(g.status, {pass:'通过',warn:'警告',fail:'不通过',unknown:'待验证'}[g.status]) + '</td></tr>';
+    }).join('');
+    $('#gateCallout').innerHTML = '<span class="label">结论</span>' + verdict.text + '：' + verdict.reason;
+    $('#gateCallout').className = 'callout ' + (verdict.cls === 'red' ? 'red' : verdict.cls === 'green' ? 'green' : 'amber');
+  }
+
+  function renderScores(econ){
+    var rows = [
+      { key: 'demand', name: '需求', val: SCORES.demand },
+      { key: 'competition', name: '竞争', val: SCORES.competition },
+      { key: 'econ', name: '经济性', val: econ },
+      { key: 'differentiation', name: '差异化', val: SCORES.differentiation },
+      { key: 'supply', name: '供应链', val: SCORES.supply },
+      { key: 'content', name: '内容', val: SCORES.content }
+    ];
+    $('#scoreBars').innerHTML = rows.map(function(r){
+      return '<div class="score-row"><span class="score-name">' + r.name + '</span><div class="score-track"><div class="score-fill ' + cs(r.val) + '" style="width:' + r.val + '%"></div></div><span class="score-num">' + r.val + '</span></div>';
+    }).join('');
+    var total = totalScore(econ);
+    setText('#totalScoreNum', total);
+    $('#totalScoreFill').style.width = total + '%';
+    $('#totalScoreFill').className = 'score-fill ' + cs(total);
+    setText('#scoreValue', total);
+  }
+
+  /* ------------------------------ data gaps ------------------------------ */
+  function renderGaps(){
+    var items = [
+      ['done','核心词 24 个月搜索趋势'],
+      ['done','季节性系数 / 峰谷'],
+      ['done','5 个关键词竞争快照'],
+      ['done','17 个 criss/cross ASIN 样本'],
+      ['done','Top10 商品详情'],
+      ['done','Top3 Customers Say'],
+      ['done','内容 / A+ / 视频覆盖'],
+      ['done','价格带 / 品牌 / 卖家结构'],
+      ['done','宽类目 Home Office Desk Chairs 报告'],
+      ['done','样本单位经济假设'],
+      ['missing','供应商报价 / landed cost'],
+      ['missing','全市场销量（当前仅关键词代理）'],
+      ['missing','价格 / 促销 / Coupon 历史'],
+      ['missing','认证 / 专利 / 全量评论 / 图片审计']
+    ];
+    $('#gapList').innerHTML = items.map(function(it){
+      return '<div class="gap-item ' + (it[0] === 'done' ? 'done' : '') + '"><i></i><span><b>' + (it[0] === 'done' ? '已有' : '缺') + '：</b>' + it[1] + '</span></div>';
+    }).join('');
+  }
+
+  /* ------------------------------ inputs ------------------------------ */
+  function readInputs(){
+    inputs.price = clamp($('#priceInput').value, 1, 2000);
+    inputs.landed = clamp($('#landedInput').value, 0, 2000);
+    inputs.cpc = clamp($('#cpcInput').value, .1, 50);
+    inputs.cvr = clamp($('#cvrInput').value, .1, 100);
+    inputs.ret = clamp($('#returnInput').value, 0, 80);
+  }
+
+  function resetInputs(){
+    $('#priceInput').value = 229;
+    $('#landedInput').value = 55;
+    $('#cpcInput').value = 1.05;
+    $('#cvrInput').value = 1.98;
+    $('#returnInput').value = 1.42;
+    readInputs();
+    renderEconomics();
+    toast('已恢复默认输入');
+  }
+
+  /* ------------------------------ template CSV ------------------------------ */
+  function downloadTemplate(){
+    var headers = ['asin','brand','title','price','monthly_sales','monthly_revenue','rating_count','stars','launch_date','variations','aplus','video','brand_store','seller','fba_fee','is_fba'];
+    var sample = DATA.products.slice(0, 3).map(function(p){
+      return [p.asin, p.brand, p.title, p.price, p.monthly_sales_volume, p.monthly_sales_volume * p.price, p.rating_count, p.rating, p.online_date, p.variations, p.a_plus ? 1 : 0, p.has_video ? 1 : 0, p.has_brand_store ? 1 : 0, p.seller, p.fba_fee, p.is_fba ? 1 : 0];
+    });
+    var lines = [headers].concat(sample).map(function(row){
+      return row.map(function(v){
+        var s = String(v == null ? '' : v);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }).join(',');
+    });
+    var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'criss-cross-product-template.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    toast('商品明细模板已下载');
+  }
+
+  /* ------------------------------ tabs ------------------------------ */
+  function initTabs(){
+    $$('.tab').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        var key = tab.dataset.tab;
+        $$('.tab').forEach(function(t){ t.classList.toggle('active', t === tab); t.setAttribute('aria-selected', t === tab ? 'true' : 'false'); });
+        $$('.panel').forEach(function(p){ p.classList.toggle('active', p.dataset.panel === key); });
+        var tabs = document.querySelector('.tabs');
+        window.scrollTo({ top: Math.max(0, tabs.offsetTop - 58), behavior: 'smooth' });
+      });
+    });
+  }
+
+  /* ------------------------------ init ------------------------------ */
+  readInputs();
+  renderTop();
+  renderDemand();
+  renderCompetition();
+  renderProducts();
+  renderGaps();
+  renderEconomics();
+  initTabs();
+
+  $('#priceInput').addEventListener('input', function(){ readInputs(); renderEconomics(); });
+  $('#landedInput').addEventListener('input', function(){ readInputs(); renderEconomics(); });
+  $('#cpcInput').addEventListener('input', function(){ readInputs(); renderEconomics(); });
+  $('#cvrInput').addEventListener('input', function(){ readInputs(); renderEconomics(); });
+  $('#returnInput').addEventListener('input', function(){ readInputs(); renderEconomics(); });
+  $('#resetBtn').addEventListener('click', resetInputs);
+  $('#printBtn').addEventListener('click', function(){ window.print(); });
+  $('#templateBtn').addEventListener('click', downloadTemplate);
+})();
+</script>
+</body>
+</html>
